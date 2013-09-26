@@ -1,4 +1,4 @@
 User-agent: *
 Disallow: 
 
-Sitemap: jamielennox.net/sitemap.xml 
+Sitemap: http://jamielennox.github.io/sitemap.xml 
