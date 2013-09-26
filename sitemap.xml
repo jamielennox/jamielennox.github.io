@@ -1,31 +1,31 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
-        <loc>jamielennox.net/blog/2012/11/11/cryptographic-message-syntax/</loc>
+        <loc>www.jamielennox.net/blog/2012/11/11/cryptographic-message-syntax/</loc>
         <lastmod>2013-09-26T16:34:13+10:00</lastmod>
     </url>
     <url>
-        <loc>jamielennox.net/blog/2013/04/09/user-access-to-libvirtd/</loc>
+        <loc>www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd/</loc>
         <lastmod>2013-09-26T16:34:13+10:00</lastmod>
     </url>
     <url>
-        <loc>jamielennox.net/blog/archives/</loc>
+        <loc>www.jamielennox.net/blog/archives/</loc>
         <lastmod>2013-09-26T16:34:13+10:00</lastmod>
     </url>
     <url>
-        <loc>jamielennox.net/blog/</loc>
+        <loc>www.jamielennox.net/blog/</loc>
         <lastmod>2013-09-26T16:34:13+10:00</lastmod>
     </url>
     <url>
-        <loc>jamielennox.net/archives/</loc>
+        <loc>www.jamielennox.net/archives/</loc>
         <lastmod>2013-09-26T16:34:13+10:00</lastmod>
     </url>
     <url>
-        <loc>jamielennox.net/</loc>
+        <loc>www.jamielennox.net/</loc>
         <lastmod>2013-09-26T16:34:13+10:00</lastmod>
     </url>
     <url>
-        <loc>jamielennox.net/robots.txt</loc>
+        <loc>www.jamielennox.net/robots.txt</loc>
         <lastmod>2013-09-26T16:34:13+10:00</lastmod>
     </url>
 </urlset>
