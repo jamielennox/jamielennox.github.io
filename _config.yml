@@ -2,7 +2,7 @@
 #      Main Configs       #
 # ----------------------- #
 
-url: www.jamielennox.net
+url: http://www.jamielennox.net
 title: jamielennox.net
 subtitle:
 author: Jamie Lennox
@@ -91,7 +91,7 @@ delicious_count: 3
 
 # Disqus Comments
 disqus_short_name: jamielennox
-disqus_show_comment_count: false
+disqus_show_comment_count: true
 
 # Google Analytics
 google_analytics_tracking_id: "UA-44372550-1"
