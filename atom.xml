@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2013-09-27T10:01:23+10:00</updated>
+  <updated>2013-09-27T15:30:21+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,94 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[APIClient Communications]]></title>
+    <link href="http://www.jamielennox.net/blog/2013/09/27/apiclient-communications/"/>
+    <updated>2013-09-27T15:27:00+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2013/09/27/apiclient-communications</id>
+    <content type="html"><![CDATA[<p>There has been interest recently in porting novaclient&rsquo;s authentication plugin system to the rest of the OpenStack client libraries and moving the plugins into keystoneclient.
+At a similar time <a href="http://aababilov.wordpress.com">Alessio Ababilov</a> started trying to introduce the concept of a <a href="http://openstackgd.wordpress.com/2013/01/12/preconditions-for-common-openstack-client-library/">common base client</a> into keystoneclient.
+This is a fantastic idea and one that is well supported by the Keystone, Oslo and I&rsquo;m sure other teams.
+I&rsquo;ve been referring to this move as APIClient as that is the name of the folder in Oslo code.
+At its core is a change in how clients communicate that will result in some significant changes to the base client objects and incorporate these plugins.</p>
+
+<p>Keystone is interested in handling how communication is managed within OpenStack, not just for tokens but as we bring in client certificate and kerberos authentication it will need to have influence over the requests being sent.
+After discussing the situation with Alessio he agreed to let me take his base work and start the process of getting these changes into keystoneclient with the intent that this pattern be picked up by other OpenStack clients.
+This has unfortunately been a slower process than I would have liked and I think it is hampered by a lack of clear understanding in what is trying to be achieved, which I hope to address with this post.
+What follows is in the vein of Alessio&rsquo;s ideas and definitely a result of his work but is my own interpretation of the problem and the implementation has been rewritten from that initial work.</p>
+
+<p>Most OpenStack clients have the concept of a HTTPClient which abstracts the basic communication with a server, however projects differ in what this object is and how it is used.
+Novaclient creates an instance of a HTTPClient object which it saves as <code>self.client</code> (for yet another candidate for what a client object is).
+Much of what the novaclient object does then in terms of setting and using authentication plugins is simply a wrapper around calls to the HTTPClient object.
+Managers (the part of client responsible for a resource eg user, project etc) are provided with a reference to the base client object (this time saved as <code>api</code>) and so make requests in the form <code>self.api.client.get</code>.
+Keystoneclient subclasses HTTPClient and managers make calls in the form <code>self.api.get</code>.
+Other projects can go either way depending on which client they were using as reference.</p>
+
+<p>My <em>guess</em> here is that when keystoneclient was initially split out from novaclient the subclassing of HTTPClient was intentional, such that keystoneclient would provide an authenticated HTTPClient that novaclient would use.
+Keystoneclient however has its own managers and requirements and the projects have sufficiently diverged so that it no longer fits into this role.
+To this day novaclient does not use keystoneclient (in any way) and introduced authentication plugins instead.</p>
+
+<p>If there is going to be a common communication framework then there must be a decision between:</p>
+
+<ul>
+<li>Standardizing on a common base client class that is capable of handling communication (as keystoneclient does).</li>
+<li>Create a standalone communication object that clients make use of (as novaclient does).</li>
+</ul>
+
+
+<p>The APIClient design goes for the latter.
+We create a communication object that can be used by any type of client <em>and</em> be reused by different instances of clients (which novaclient does not currently allow).
+This communication object is passed between clients deprecating some of the ever increasing list of parameters passed to clients and changes the flow from authenticating a client to authenticating a channel that clients can make use of.
+This centralizes authentication and token fetching (including kerberos and client certs), catalog management and endpoint selection and will let us address caching, HTTP session management etc in the future.</p>
+
+<p>In the initial APIClient this object was the new HTTPClient, however this term was so abused I am currently using ClientSession (as it is built on the requests library and is similar to the requests.Session concept) but debate continues.</p>
+
+<p>This is where authentication plugins will live so that any communication through a ClientSession object can request a token added from the plugin.
+Maintaining the plugin architecture is preferred here to simply having multiple ClientSession subclasses to allow independent storing and caching of authentication, plugin discovery, and changing or renewing authentication.</p>
+
+<p>So an example of the new workflow is:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">keystoneclient.auth.identity</span> <span class="kn">import</span> <span class="n">v3_auth</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystoneclient</span> <span class="kn">import</span> <span class="n">session</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystoneclient.v3</span> <span class="kn">import</span> <span class="n">client</span> <span class="k">as</span> <span class="n">v3_client</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">novaclient.v1_1</span> <span class="kn">import</span> <span class="n">client</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">auth</span> <span class="o">=</span> <span class="n">v3_auth</span><span class="o">.</span><span class="n">Auth</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s">&#39;username&#39;</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">password</span><span class="o">=</span><span class="s">&#39;password&#39;</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">project_id</span><span class="o">=</span><span class="s">&#39;project_id&#39;</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">auth_url</span><span class="o">=</span><span class="s">&#39;https://keystone.example.com&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">client_session</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">ClientSession</span><span class="p">(</span><span class="n">auth</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">keystone_client</span> <span class="o">=</span> <span class="n">v3_client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">client_session</span><span class="p">)</span>
+</span><span class='line'><span class="n">nova_client</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">client_session</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It is obviously a little longer than the current method but I&rsquo;m sure that the old syntax can be maintained for when you only need a single client.</p>
+
+<p>Implementations of this are starting to go into review on keystoneclient.
+For the time being some features from nova such as authentication plugins specifying CLI arguments are not being considered until we can ensure that the new system meets at least the current functionality.</p>
+
+<p>The major problem found so far is maintaining API compatibility.
+Much of what is currently on keystoneclient that will be moved is defined publicly and cannot simply be thrown away even though they are typically attributes and abstract functions that a user should have no need of.</p>
+
+<p>Hopefully this or something very similar will be coming to the various OpenStack clients soon.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[User access to libvirtd]]></title>

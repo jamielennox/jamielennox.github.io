@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: openstack | jamielennox.net]]></title>
-  <link href="http://www.jamielennox.net/blog/categories/openstack/atom.xml" rel="self"/>
+  <title><![CDATA[Category: keystone | jamielennox.net]]></title>
+  <link href="http://www.jamielennox.net/blog/categories/keystone/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
   <updated>2013-09-27T15:30:21+10:00</updated>
   <id>http://www.jamielennox.net/</id>
@@ -88,30 +88,6 @@ For the time being some features from nova such as authentication plugins specif
 Much of what is currently on keystoneclient that will be moved is defined publicly and cannot simply be thrown away even though they are typically attributes and abstract functions that a user should have no need of.</p>
 
 <p>Hopefully this or something very similar will be coming to the various OpenStack clients soon.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[User access to libvirtd]]></title>
-    <link href="http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd/"/>
-    <updated>2013-04-09T11:50:00+10:00</updated>
-    <id>http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd</id>
-    <content type="html"><![CDATA[<p>To enable access to libvirtd without sudo:</p>
-
-<ol>
-<li>Create a group for privileged users, I called mine <code>libvirt</code> and add your users to it.</li>
-<li>Create a new file in <code>/etc/polkit-1/rules.d/</code> i called mine <code>50-libvirt-group.rules</code></li>
-<li>Add the following function:
-<code>
-polkit.addRule(function(action, subject) {
- if (action.id == "org.libvirt.unix.manage" &amp;&amp;
-     subject.isInGroup('libvirt') ) {
-     return polkit.Result.YES;
- }
-});
-</code></li>
-</ol>
-
 ]]></content>
   </entry>
   

@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>jamielennox.net</title>
+  <title>APIClient Communications - jamielennox.net</title>
   <meta name="author" content="Jamie Lennox">
 
   
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://www.jamielennox.net">
+  <link rel="canonical" href="http://www.jamielennox.net/blog/2013/09/27/apiclient-communications">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="jamielennox.net" type="application/atom+xml">
@@ -73,15 +73,12 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2013/09/27/apiclient-communications/">APIClient Communications</a></h1>
+      <h1 class="entry-title">APIClient Communications</h1>
     
     
       <p class="meta">
@@ -99,14 +96,14 @@
 
 <time datetime="2013-09-27T15:27:00+10:00" pubdate data-updated="true">Sep 27<span>th</span>, 2013</time>
         
-         | <a href="/blog/2013/09/27/apiclient-communications/#disqus_thread">Comments</a>
+         | <a href="#disqus_thread">Comments</a>
         
       </p>
     
   </header>
 
 
-  <div class="entry-content"><p>There has been interest recently in porting novaclient&rsquo;s authentication plugin system to the rest of the OpenStack client libraries and moving the plugins into keystoneclient.
+<div class="entry-content"><p>There has been interest recently in porting novaclient&rsquo;s authentication plugin system to the rest of the OpenStack client libraries and moving the plugins into keystoneclient.
 At a similar time <a href="http://aababilov.wordpress.com">Alessio Ababilov</a> started trying to introduce the concept of a <a href="http://openstackgd.wordpress.com/2013/01/12/preconditions-for-common-openstack-client-library/">common base client</a> into keystoneclient.
 This is a fantastic idea and one that is well supported by the Keystone, Oslo and I&rsquo;m sure other teams.
 I&rsquo;ve been referring to this move as APIClient as that is the name of the folder in Oslo code.
@@ -187,83 +184,16 @@ Much of what is currently on keystoneclient that will be moved is defined public
 
 <p>Hopefully this or something very similar will be coming to the various OpenStack clients soon.</p>
 </div>
-  
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/04/09/user-access-to-libvirtd/">User Access to Libvirtd</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
   
 
+<span class="byline author vcard">Posted by <span class="fn">Jamie Lennox</span></span>
 
-<time datetime="2013-04-09T11:50:00+10:00" pubdate data-updated="true">Apr 9<span>th</span>, 2013</time>
-        
-         | <a href="/blog/2013/04/09/user-access-to-libvirtd/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>To enable access to libvirtd without sudo:</p>
-
-<ol>
-<li>Create a group for privileged users, I called mine <code>libvirt</code> and add your users to it.</li>
-<li>Create a new file in <code>/etc/polkit-1/rules.d/</code> i called mine <code>50-libvirt-group.rules</code></li>
-<li>Add the following function:</li>
-</ol>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>polkit.addRule(function(action, subject) {
-</span><span class='line'>    if (action.id == "org.libvirt.unix.manage" &&
-</span><span class='line'>        subject.isInGroup('libvirt') ) {
-</span><span class='line'>        return polkit.Result.YES;
-</span><span class='line'>    }
-</span><span class='line'>});</span></code></pre></td></tr></table></div></figure>
-
-
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/11/11/cryptographic-message-syntax/">Cryptographic Message Syntax</a></h1>
-    
-    
-      <p class="meta">
-        
 
 
 
@@ -275,185 +205,49 @@ Much of what is currently on keystoneclient that will be moved is defined public
   
 
 
-<time datetime="2012-11-11T17:13:00+10:00" pubdate data-updated="true">Nov 11<span>th</span>, 2012</time>
-        
-         | <a href="/blog/2012/11/11/cryptographic-message-syntax/#disqus_thread">Comments</a>
-        
-      </p>
+<time datetime="2013-09-27T15:27:00+10:00" pubdate data-updated="true">Sep 27<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/keystone/'>keystone</a>, <a class='category' href='/blog/categories/openstack/'>openstack</a>
+  
+</span>
+
+
+    </p>
     
-  </header>
+      <div class="sharing">
+  
+  
+  
+</div>
 
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/04/09/user-access-to-libvirtd/" title="Previous Post: User access to libvirtd">&laquo; User access to libvirtd</a>
+      
+      
+    </p>
+  </footer>
+</article>
 
-  <div class="entry-content"><p>CMS is the <a href="http://en.wikipedia.org/wiki/IETF">IETF</a>&rsquo;s standardized approach to cryptographically secure messages.
-It provides a BER encoded, ASN1 defined means of communicating the parameters and data of a message between recipients.</p>
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
-<p>The most recent definitions come from <a href="http://tools.ietf.org/html/rfc5652">RFC 5652</a> and it does do a good job of explaining how each operation works and what is required, it even provides some usage examples.
-What is missing is a simple rundown of the different types of messages that goes into more detail than <a href="http://en.wikipedia.org/wiki/Cryptographic_Message_Syntax">Wikipedia</a> but doesn&rsquo;t have you jumping straight into the RFC.</p>
-
-<p>Data section should be thought of as a way of using a cryptographic function rather than a message all on its own.
-Correlations will become obvious but EncryptedData is simply a way of portraying symmetrically encrypted data and AuthenticatedData is essentially a way of addressing and sending a MAC.
-As with using normal crypto functions you will often need a combination to provide the required security and so CMS messages are designed to contain nested data sections.
-A common example is a Signed data wrapping an Enveloped data to provide confidentiality and authenticity, or an Enveloped Digest message for confidentiality and integrity.</p>
-
-<p>I realize this is by no means a comprehensive rundown but it should frame the situation and give an overview before you get to the RFC.
-The meat of the post is a list of each CMS data type and the most important parts of the ASN1 definition as it should allow you to figure out how each segment is used and the chain of data you will want in your message.</p>
-
-<h3>EncryptedData</h3>
-
-<p>The most simple CMS message just takes a symmetric key and encrypt some data.
-How to give that key to someone else is outside this message.
-It&rsquo;s defined as:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>EncryptedData ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  encryptedContentInfo EncryptedContentInfo,
-</span><span class='line'>  unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>DigestedData</h3>
-
-<p>Provides a digest along with the plaintext.
-Typically this is then wrapped by an EnvelopedData or such to provide Integrity to a message.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>DigestedData ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  digestAlgorithm DigestAlgorithmIdentifier,
-</span><span class='line'>  encapContentInfo EncapsulatedContentInfo,
-</span><span class='line'>  digest Digest }</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>SignedData</h3>
-
-<p>SignedData messages allow any number of certificates to sign a payload.
-In the regular signing way, each signer creates a digest of the payload and encrypts it with their private key.
-The message contains the certificate of the signers and can contain a store of certificates and CRLs for cert path validation by the receiver.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>SignerInfo ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  sid SignerIdentifier,
-</span><span class='line'>  digestAlgorithm DigestAlgorithmIdentifier,
-</span><span class='line'>  signedAttrs [0] IMPLICIT SignedAttributes OPTIONAL,
-</span><span class='line'>  signatureAlgorithm SignatureAlgorithmIdentifier,
-</span><span class='line'>  signature SignatureValue,
-</span><span class='line'>  unsignedAttrs [1] IMPLICIT UnsignedAttributes OPTIONAL }
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>SignedData ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  digestAlgorithms DigestAlgorithmIdentifiers,
-</span><span class='line'>  encapContentInfo EncapsulatedContentInfo,
-</span><span class='line'>  certificates [0] IMPLICIT CertificateSet OPTIONAL,
-</span><span class='line'>  crls [1] IMPLICIT RevocationInfoChoices OPTIONAL,
-</span><span class='line'>  signerInfos SignerInfos }</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>EnvelopedData</h3>
-
-<p>EnvelopedData allows you to address encrypted data to any number of specific recipients.
-The most common recipients are a certificate (or the private key of), a symmetric key or a password.
-The payload is encrypted with a symmetric key and then this key is encrypted with the key provided by the recipient (or PBKDF for passwords).
-So on decoding the recipient will decrypt the symmetric key from the RecipientInfo associated with them and then use that to decrypt the plaintext mesage.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>EnvelopedData ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
-</span><span class='line'>  recipientInfos RecipientInfos,
-</span><span class='line'>  encryptedContentInfo EncryptedContentInfo,
-</span><span class='line'>  unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }
-</span><span class='line'>
-</span><span class='line'>RecipientInfo ::= CHOICE {
-</span><span class='line'>  ktri KeyTransRecipientInfo,
-</span><span class='line'>  kari [1] KeyAgreeRecipientInfo,
-</span><span class='line'>  kekri [2] KEKRecipientInfo,
-</span><span class='line'>  pwri [3] PasswordRecipientinfo,
-</span><span class='line'>  ori [4] OtherRecipientInfo }</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>AuthenticatedData</h3>
-
-<p>AuthenticatedData is the one that always trips me up, it allows you to send a message that is only verifiable by a number of specific recipients.
-It generates a new MAC secret key and with it generates a MAC digest for the plaintext.
-It then encrypts the MAC secret key to any number of recipients similar to EnvelopedData and includes the MAC in the message.
-The message itself is not encrypted and can be retrieved, but you cannot assert the message integrity without being one of the explicit recipients.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>AuthenticatedData ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
-</span><span class='line'>  recipientInfos RecipientInfos,
-</span><span class='line'>  macAlgorithm MessageAuthenticationCodeAlgorithm,
-</span><span class='line'>  digestAlgorithm [1] DigestAlgorithmIdentifier OPTIONAL,
-</span><span class='line'>  encapContentInfo EncapsulatedContentInfo,
-</span><span class='line'>  authAttrs [2] IMPLICIT AuthAttributes OPTIONAL,
-</span><span class='line'>  mac MessageAuthenticationCode,
-</span><span class='line'>  unauthAttrs [3] IMPLICIT UnauthAttributes OPTIONAL }</span></code></pre></td></tr></table></div></figure>
 
 </div>
-  
-  
 
-
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
 <aside class="sidebar">
   
     
   
 </aside>
+
 
     </div>
   </div>
@@ -469,7 +263,10 @@ The message itself is not encrypted and can be retrieved, but you cannot assert 
       var disqus_shortname = 'jamielennox';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.jamielennox.net/blog/2013/09/27/apiclient-communications/';
+        var disqus_url = 'http://www.jamielennox.net/blog/2013/09/27/apiclient-communications/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
