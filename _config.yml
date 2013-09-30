@@ -33,6 +33,7 @@ destination: public
 plugins: plugins
 code_dir: downloads/code
 category_dir: blog/categories
+category_feeds: true
 markdown: rdiscount
 rdiscount:
   extensions:
