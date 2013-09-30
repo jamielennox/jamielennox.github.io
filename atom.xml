@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2013-09-27T15:30:21+10:00</updated>
+  <updated>2013-09-30T16:45:50+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,38 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Keystone with HTTPd in devstack]]></title>
+    <link href="http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack/"/>
+    <updated>2013-09-30T13:53:00+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack</id>
+    <content type="html"><![CDATA[<p>Keystone has been slowly pushing away from being deployed with <a href="http://eventlet.net">Eventlet</a> and the <code>keystone-all</code> script in favour of the more traditional httpd mod_wsgi application method.
+There has been discussion of Eventlet&rsquo;s place in OpenStack <a href="http://davidhadas.wordpress.com/2012/05/14/asynchronousio/">before</a> and its (mis)use has led to numerous subtle bugs and problems, however from my opinion in Keystone the most important reasons to move away from Eventlet are:</p>
+
+<ul>
+<li>Eventlet does not support Kerberos authentication.</li>
+<li>pyOpenSSL only releases the GIL around some SSL verification commands.
+This leads to a series of hacks to prevent long running crypto commands blocking Eventlet threads and thus the entire Keystone process.</li>
+<li>There are already a lot of httpd authentication/authorization plugins that we could make use of in Keystone.</li>
+<li>It&rsquo;s faster to have things handled by httpd modules in C than in Python.</li>
+</ul>
+
+
+<p>Keystone has shipped with sample WSGI scripts and httpd configuration files since Foslom and documentation for how to use them <a href="http://docs.openstack.org/developer/keystone/apache-httpd.html">is available</a> however most guides and service wrappers (upstart, systemd etc) will use the <code>keystone-all</code> method.</p>
+
+<p>To get some wider adoption and understanding of the process I&rsquo;ve just added Keystone with httpd support into devstack.
+Simply set:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>APACHE_ENABLED_SERVICES=key</span></code></pre></td></tr></table></div></figure>
+
+
+<p>in your localrc or environment variables and re-run <code>./stack.sh</code> to try it out.</p>
+
+<p>P.S. Swift can also be deployed this way by adding <code>swift</code> to the (comma separated) services list.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[APIClient Communications]]></title>
