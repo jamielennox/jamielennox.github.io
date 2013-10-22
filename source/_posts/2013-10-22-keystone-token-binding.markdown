@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Keystone Token Binding"
-date: 2013-10-18 13:52
+date: 2013-10-22 11:48
 comments: true
 categories: keystone openstack
 ---
