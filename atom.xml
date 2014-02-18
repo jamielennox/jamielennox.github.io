@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2013-10-22T11:54:36+10:00</updated>
+  <updated>2014-02-18T12:15:54+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Dealing with .pyc]]></title>
+    <link href="http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc/"/>
+    <updated>2014-02-18T11:08:00+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc</id>
+    <content type="html"><![CDATA[<p>I have often found that when dealing with multiple branches and refactoring patches I get caught out by left over *.pyc files from python files that don&rsquo;t exist on this branch.
+This bit me again recently so I went looking for options.</p>
+
+<p>A useful environment variable that I found via some stackoverflow questions is: <a href="http://docs.python.org/2/using/cmdline.html#envvar-PYTHONDONTWRITEBYTECODE">PYTHONDONTWRITEBYTECODE</a> which, when set, prevents python from writing .pyc and .pyo files.
+This is not something that I want to set permanently on my machine but is great for development.</p>
+
+<p>The other tool I use for all my python projects is <a href="http://virtualenvwrapper.readthedocs.org/en/latest/">virtualenvwrapper</a> which allows you to isolate project dependencies and environments in what I think is a more intuitive way than with virtualenv directly.</p>
+
+<p>Armed with the simple idea that these two concepts should be able to work together I found I was not the first person to think of this.
+There are other guides out there but the basic concept is simply to set PYTHONDONTWRITEBYTECODE when we activate a virtualenv and reset it when we deactivate it.</p>
+
+<p>Easy.</p>
+
+<p>Add to <em>~/.virtualenvs/postactivate</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">_PYTHONDONTWRITEBYTECODE</span><span class="o">=</span><span class="nv">$PYTHONDONTWRITEBYTECODE</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">PYTHONDONTWRITEBYTECODE</span><span class="o">=</span>1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Add to <em>~/.virtualenvs/predeactivate</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">PYTHONDONTWRITEBYTECODE</span><span class="o">=</span><span class="nv">$_PYTHONDONTWRITEBYTECODE</span>
+</span><span class='line'><span class="nb">unset </span>_PYTHONDONTWRITEBYETCODE
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Membership Based Access Control]]></title>
+    <link href="http://www.jamielennox.net/blog/2013/12/11/membership-based-access-control/"/>
+    <updated>2013-12-11T14:29:00+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2013/12/11/membership-based-access-control</id>
+    <content type="html"><![CDATA[
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Keystone Token Binding]]></title>

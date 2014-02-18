@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Keystone with HTTPd in devstack - jamielennox.net</title>
+  <title>Dealing with .pyc - jamielennox.net</title>
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="Keystone has been slowly pushing away from being deployed with Eventlet and the keystone-all script in favour of the more traditional httpd mod_wsgi &hellip;">
+  <meta name="description" content="I have often found that when dealing with multiple branches and refactoring patches I get caught out by left over *.pyc files from python files that &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack">
+  <link rel="canonical" href="http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="jamielennox.net" type="application/atom+xml">
@@ -78,7 +78,7 @@
   
   <header>
     
-      <h1 class="entry-title">Keystone With HTTPd in Devstack</h1>
+      <h1 class="entry-title">Dealing With .pyc</h1>
     
     
       <p class="meta">
@@ -94,7 +94,7 @@
   
 
 
-<time datetime="2013-09-30T13:53:00+10:00" pubdate data-updated="true">Sep 30<span>th</span>, 2013</time>
+<time datetime="2014-02-18T11:08:00+10:00" pubdate data-updated="true">Feb 18<span>th</span>, 2014</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -103,30 +103,36 @@
   </header>
 
 
-<div class="entry-content"><p>Keystone has been slowly pushing away from being deployed with <a href="http://eventlet.net">Eventlet</a> and the <code>keystone-all</code> script in favour of the more traditional httpd mod_wsgi application method.
-There has been discussion of Eventlet&rsquo;s place in OpenStack <a href="http://davidhadas.wordpress.com/2012/05/14/asynchronousio/">before</a> and its (mis)use has led to numerous subtle bugs and problems, however from my opinion in Keystone the most important reasons to move away from Eventlet are:</p>
+<div class="entry-content"><p>I have often found that when dealing with multiple branches and refactoring patches I get caught out by left over *.pyc files from python files that don&rsquo;t exist on this branch.
+This bit me again recently so I went looking for options.</p>
 
-<ul>
-<li>Eventlet does not support Kerberos authentication.</li>
-<li>pyOpenSSL only releases the GIL around some SSL verification commands.
-This leads to a series of hacks to prevent long running crypto commands blocking Eventlet threads and thus the entire Keystone process.</li>
-<li>There are already a lot of httpd authentication/authorization plugins that we could make use of in Keystone.</li>
-<li>It&rsquo;s faster to have things handled by httpd modules in C than in Python.</li>
-</ul>
+<p>A useful environment variable that I found via some stackoverflow questions is: <a href="http://docs.python.org/2/using/cmdline.html#envvar-PYTHONDONTWRITEBYTECODE">PYTHONDONTWRITEBYTECODE</a> which, when set, prevents python from writing .pyc and .pyo files.
+This is not something that I want to set permanently on my machine but is great for development.</p>
+
+<p>The other tool I use for all my python projects is <a href="http://virtualenvwrapper.readthedocs.org/en/latest/">virtualenvwrapper</a> which allows you to isolate project dependencies and environments in what I think is a more intuitive way than with virtualenv directly.</p>
+
+<p>Armed with the simple idea that these two concepts should be able to work together I found I was not the first person to think of this.
+There are other guides out there but the basic concept is simply to set PYTHONDONTWRITEBYTECODE when we activate a virtualenv and reset it when we deactivate it.</p>
+
+<p>Easy.</p>
+
+<p>Add to <em>~/.virtualenvs/postactivate</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">_PYTHONDONTWRITEBYTECODE</span><span class="o">=</span><span class="nv">$PYTHONDONTWRITEBYTECODE</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">PYTHONDONTWRITEBYTECODE</span><span class="o">=</span>1
+</span></code></pre></td></tr></table></div></figure>
 
 
-<p>Keystone has shipped with sample WSGI scripts and httpd configuration files since Foslom and documentation for how to use them <a href="http://docs.openstack.org/developer/keystone/apache-httpd.html">is available</a> however most guides and service wrappers (upstart, systemd etc) will use the <code>keystone-all</code> method.</p>
+<p>Add to <em>~/.virtualenvs/predeactivate</em>:</p>
 
-<p>To get some wider adoption and understanding of the process I&rsquo;ve just added Keystone with httpd support into devstack.
-Simply set:</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">PYTHONDONTWRITEBYTECODE</span><span class="o">=</span><span class="nv">$_PYTHONDONTWRITEBYTECODE</span>
+</span><span class='line'><span class="nb">unset </span>_PYTHONDONTWRITEBYETCODE
+</span></code></pre></td></tr></table></div></figure>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>APACHE_ENABLED_SERVICES=key</span></code></pre></td></tr></table></div></figure>
-
-
-<p>in your localrc or environment variables and re-run <code>./stack.sh</code> to try it out.</p>
-
-<p>P.S. Swift can also be deployed this way by adding <code>swift</code> to the (comma separated) services list.</p>
 </div>
 
 
@@ -149,12 +155,12 @@ Simply set:</p>
   
 
 
-<time datetime="2013-09-30T13:53:00+10:00" pubdate data-updated="true">Sep 30<span>th</span>, 2013</time>
+<time datetime="2014-02-18T11:08:00+10:00" pubdate data-updated="true">Feb 18<span>th</span>, 2014</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/devstack/'>devstack</a>, <a class='category' href='/blog/categories/keystone/'>keystone</a>, <a class='category' href='/blog/categories/openstack/'>openstack</a>
+    <a class='category' href='/blog/categories/openstack/'>openstack</a>, <a class='category' href='/blog/categories/python/'>python</a>
   
 </span>
 
@@ -170,10 +176,8 @@ Simply set:</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/09/27/apiclient-communications/" title="Previous Post: APIClient Communications">&laquo; APIClient Communications</a>
+        <a class="basic-alignment left" href="/blog/2013/12/11/membership-based-access-control/" title="Previous Post: Membership Based Access Control">&laquo; Membership Based Access Control</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/10/22/keystone-token-binding/" title="Next Post: Keystone Token Binding">Keystone Token Binding &raquo;</a>
       
     </p>
   </footer>
@@ -210,8 +214,8 @@ Simply set:</p>
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack/';
-        var disqus_url = 'http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack/';
+        var disqus_identifier = 'http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc/';
+        var disqus_url = 'http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc/';
         var disqus_script = 'embed.js';
       
     (function () {
