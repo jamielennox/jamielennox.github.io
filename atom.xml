@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-02-18T12:15:54+10:00</updated>
+  <updated>2014-02-18T12:19:27+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -48,15 +48,6 @@ There are other guides out there but the basic concept is simply to set PYTHONDO
 </span><span class='line'><span class="nb">unset </span>_PYTHONDONTWRITEBYETCODE
 </span></code></pre></td></tr></table></div></figure>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Membership Based Access Control]]></title>
-    <link href="http://www.jamielennox.net/blog/2013/12/11/membership-based-access-control/"/>
-    <updated>2013-12-11T14:29:00+10:00</updated>
-    <id>http://www.jamielennox.net/blog/2013/12/11/membership-based-access-control</id>
-    <content type="html"><![CDATA[
 ]]></content>
   </entry>
   
