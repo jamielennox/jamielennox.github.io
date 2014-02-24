@@ -4,7 +4,7 @@
   <title><![CDATA[Category: openstack | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/openstack/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-02-18T12:19:27+10:00</updated>
+  <updated>2014-02-24T16:24:44+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,192 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Client Session Objects]]></title>
+    <link href="http://www.jamielennox.net/blog/2014/02/24/client-session-objects/"/>
+    <updated>2014-02-24T13:32:00+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2014/02/24/client-session-objects</id>
+    <content type="html"><![CDATA[<p>Keystoneclient has recently introduced a <em>Session</em> object.
+The concept was discussed and generally accepted at the Hong Kong Summit that keystoneclient as the root of authentication (and arguably security) should be responsible for transport (HTTP) and authentication across all the clients.</p>
+
+<p>The majority of the functionality in this post is written and up for review but has <strong>not yet been committed</strong>.
+I write this in an attempt to show the direction of clients as there is currently a lot of talk around projects such as the <a href="https://wiki.openstack.org/wiki/SDK-Development">OpenStack-SDK</a>.</p>
+
+<p>When working with clients you would first create an authentication object, then create a session object with that authentication and then re-use that session object across all the clients you instantiate.</p>
+
+<p>```python</p>
+
+<p>from keystoneclient.auth.identity import v2
+from keystoneclient import session
+from keystoneclient.v2_0 import client</p>
+
+<p>auth = v2.Password(auth_url=&lsquo;<a href="https://localhost:5000/v2.0">https://localhost:5000/v2.0</a>&rsquo;,</p>
+
+<pre><code>               username='user',
+               password='pass',
+               tenant_name='demo')
+</code></pre>
+
+<p>sess = session.Session(auth=auth,</p>
+
+<pre><code>                   verify='/path/to/ca.pem')
+</code></pre>
+
+<p>ksclient = client.Client(session=sess,</p>
+
+<pre><code>                     region_name='RegionOne')
+</code></pre>
+
+<h1>other clients can be created sharing the sess parameter</h1>
+
+<p>```</p>
+
+<p>Now whenever you want to make an authenticated request you just indicated it as part of the request call.</p>
+
+<p>```python</p>
+
+<h1>requests with authenticated are sent with a token</h1>
+
+<p>users = sess.get(&lsquo;<a href="http://localhost:35357/v2.0/users">http://localhost:35357/v2.0/users</a>&rsquo;,</p>
+
+<pre><code>             authenticated=True)
+</code></pre>
+
+<p>```</p>
+
+<p>This was pretty much the extent of the initial proposal, however in working with the plugins I have come to realize that authentication is responsible for much more than simply getting a token.</p>
+
+<p>A large part of the data in a keystone token is the service catalog.
+This is a listing of the services known to an OpenStack deployment and the URLs that we should use when accessing those services.
+Because of the disjointed way in which clients have been developed this service catalog is parsed by each client to determine the URL with which to make API calls.</p>
+
+<p>With a session object in control of authentication and the service catalog there is no reason for a client to know its URL, just what it wants to communicate.</p>
+
+<p>```python</p>
+
+<p>users = sess.get(&lsquo;/users&rsquo;,</p>
+
+<pre><code>             authenticated=True,
+             service_type='identity',
+             endpoint_type='admin',
+             region_name='RegionOne')
+</code></pre>
+
+<p>```</p>
+
+<p>The values of <code>service_type</code> and <code>endpoint_type</code> are well known and constant to a client, <code>region_name</code> is generally passed in when instantiating (if required).
+Requests made via the client object will have these parameters added automatically, so given the client from above the following call is exactly the same:</p>
+
+<p>```python</p>
+
+<p>users = ksclient.get(&lsquo;/users&rsquo;)</p>
+
+<p>```</p>
+
+<p>Where I feel that this will really begin to help though is in dealing with the transition between API versions.</p>
+
+<p>Currently deployments of OpenStack put a versioned endpoint in the service catalog eg for identity <code>http://localhost:5000/v2.0</code>.
+This made sense initially however now as we try to transition people to the V3 identity API we find that there is no backwards compatible way to advertise both the v2 and v3 services.
+The agreed solution long-term is that entries in the service catalog should not be versioned eg. <code>http://localhost:5000</code> as the root path of a service will list the available versions.
+So how do we handle this transition across the 8+ clients?
+Easy:</p>
+
+<p>```python</p>
+
+<p>try:</p>
+
+<pre><code>users = sess.get('/users',
+                 authenticated=True,
+                 service_type='identity',
+                 endpoint_type='admin',
+                 region_name='RegionOne',
+                 version=(2, 0))  # just specify the version you need
+</code></pre>
+
+<p>except keystoneclient.exceptions.EndpointNotFound:</p>
+
+<pre><code>logging.error('No v2 identity endpoint available', exc_info=True)
+</code></pre>
+
+<p>```</p>
+
+<p>This solution also means that when we have a suitable hack for the transition to unversioned endpoints it needs only be implemented in one place.</p>
+
+<p>Reliant on this is a means to discover the available versions of all the OpenStack services.
+Turns out that in general the projects are similar enough in structure that it can be done with a few minor hacks.
+For newer projects there is now a definitive specification <a href="https://wiki.openstack.org/wiki/VersionDiscovery">on the wiki</a>.</p>
+
+<p>A major advantage of this common approach is we now have a standard way of determining whether a version of a project is available in this cloud.
+Therefore we get client version discovery pretty much for free:</p>
+
+<p>```python</p>
+
+<p>if sess.is_available(service_type=&lsquo;identity&rsquo;,</p>
+
+<pre><code>                 version=(2,0)):
+ksclient = v2_0.client.Client(sess)
+</code></pre>
+
+<p>else:</p>
+
+<pre><code>logging.error("Can't create a v2 identity client")
+</code></pre>
+
+<p>```</p>
+
+<p>That&rsquo;s a little verbose as a client knows that information, so we can extract a wrapper:</p>
+
+<p>```python</p>
+
+<p>if v2_0.client.Client.is_available(sess):</p>
+
+<pre><code>ksclient = v2_0.client.Client(sess)
+</code></pre>
+
+<p>```</p>
+
+<p>or simply:</p>
+
+<p>```python</p>
+
+<p>ksclient = keystoneclient.client.Client(session=sess,</p>
+
+<pre><code>                                    version=(2,0))
+</code></pre>
+
+<p>if ksclient:</p>
+
+<pre><code># do stuff
+</code></pre>
+
+<p>```</p>
+
+<p>So the session object has evolved from a pure transport level object and this departure is somewhat concerning as I don&rsquo;t like mixing layers of responsibility.
+However in practice we have standardized on the <a href="http://www.python-requests.org">requests</a> library to abstract much of this away and the Session object is providing helpers around this.</p>
+
+<p>So, along with standardizing transport, by using the session object like this we can:</p>
+
+<ul>
+<li>reduce the basic client down to an object consisting of a few variables indicating the service type and version required.</li>
+<li>finally get a common service discovery mechanism for all the clients.</li>
+<li>shift the problem of API version migration onto someone else &ndash; probably me.</li>
+</ul>
+
+
+<h4>Disclaimers and Notes</h4>
+
+<ul>
+<li><p>The examples provided above use keystoneclient and the &lsquo;identity&rsquo; service purely because this is what has been implemented so far.
+In terms of CRUD operations keystoneclient is essentially the same as other client in that it retrieves its endpoint from the service catalog and issues requests to it, so the approach will work equally well.</p></li>
+<li><p>Currently none of the other clients rely upon the session object, I have been waiting on the inclusion of authentication plugins and service discovery before making this push.</p></li>
+<li><p>Region handling is still a little awkward when using the clients.
+I blame this completely on the fact that region handling is awkward on the servers.
+In Juno we should have hierarchical regions and then it may make sense to allow <code>region_name</code> to be set on a session rather than per client.</p></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Dealing with .pyc]]></title>
@@ -261,30 +447,6 @@ For the time being some features from nova such as authentication plugins specif
 Much of what is currently on keystoneclient that will be moved is defined publicly and cannot simply be thrown away even though they are typically attributes and abstract functions that a user should have no need of.</p>
 
 <p>Hopefully this or something very similar will be coming to the various OpenStack clients soon.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[User access to libvirtd]]></title>
-    <link href="http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd/"/>
-    <updated>2013-04-09T11:50:00+10:00</updated>
-    <id>http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd</id>
-    <content type="html"><![CDATA[<p>To enable access to libvirtd without sudo:</p>
-
-<ol>
-<li>Create a group for privileged users, I called mine <code>libvirt</code> and add your users to it.</li>
-<li>Create a new file in <code>/etc/polkit-1/rules.d/</code> i called mine <code>50-libvirt-group.rules</code></li>
-<li>Add the following function:
-<code>
-polkit.addRule(function(action, subject) {
- if (action.id == "org.libvirt.unix.manage" &amp;&amp;
-     subject.isInGroup('libvirt') ) {
-     return polkit.Result.YES;
- }
-});
-</code></li>
-</ol>
-
 ]]></content>
   </entry>
   
