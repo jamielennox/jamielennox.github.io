@@ -2,52 +2,56 @@
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
     <url>
         <loc>http://www.jamielennox.net/blog/2012/11/11/cryptographic-message-syntax/</loc>
-        <lastmod>2013-09-30T18:49:48+10:00</lastmod>
+        <lastmod>2014-06-04T07:10:21+10:00</lastmod>
     </url>
     <url>
         <loc>http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd/</loc>
-        <lastmod>2013-09-30T18:49:48+10:00</lastmod>
+        <lastmod>2014-06-04T07:10:21+10:00</lastmod>
     </url>
     <url>
         <loc>http://www.jamielennox.net/blog/2013/09/27/apiclient-communications/</loc>
-        <lastmod>2013-09-30T18:49:48+10:00</lastmod>
+        <lastmod>2014-06-04T07:10:21+10:00</lastmod>
     </url>
     <url>
         <loc>http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack/</loc>
-        <lastmod>2013-09-30T18:49:48+10:00</lastmod>
+        <lastmod>2014-06-04T07:10:21+10:00</lastmod>
     </url>
     <url>
         <loc>http://www.jamielennox.net/blog/2013/10/22/keystone-token-binding/</loc>
-        <lastmod>2013-12-11T14:28:07+10:00</lastmod>
+        <lastmod>2014-06-04T07:10:21+10:00</lastmod>
     </url>
     <url>
         <loc>http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc/</loc>
-        <lastmod>2014-02-18T11:55:36+10:00</lastmod>
+        <lastmod>2014-06-04T07:10:21+10:00</lastmod>
+    </url>
+    <url>
+        <loc>http://www.jamielennox.net/blog/2014/02/24/client-session-objects/</loc>
+        <lastmod>2014-06-04T07:10:21+10:00</lastmod>
     </url>
     <url>
         <loc>
             http://www.jamielennox.net/blog/2014/05/21/identity-uri-in-auth-token-middleware/
         </loc>
-        <lastmod>2014-05-21T15:20:58+10:00</lastmod>
-    </url>
-    <url>
-        <loc>http://www.jamielennox.net/archives/</loc>
-        <lastmod>2014-05-21T15:20:58+10:00</lastmod>
+        <lastmod>2014-06-04T07:15:06+10:00</lastmod>
     </url>
     <url>
         <loc>http://www.jamielennox.net/blog/archives/</loc>
-        <lastmod>2014-05-21T15:20:58+10:00</lastmod>
+        <lastmod>2014-06-04T07:15:06+10:00</lastmod>
     </url>
     <url>
         <loc>http://www.jamielennox.net/blog/</loc>
-        <lastmod>2014-05-21T15:20:58+10:00</lastmod>
+        <lastmod>2014-06-04T07:15:06+10:00</lastmod>
     </url>
     <url>
-        <loc>http://www.jamielennox.net/robots.txt</loc>
-        <lastmod>2013-09-30T18:49:48+10:00</lastmod>
+        <loc>http://www.jamielennox.net/archives/</loc>
+        <lastmod>2014-06-04T07:15:06+10:00</lastmod>
     </url>
     <url>
         <loc>http://www.jamielennox.net/</loc>
-        <lastmod>2014-05-21T15:20:58+10:00</lastmod>
+        <lastmod>2014-06-04T07:15:06+10:00</lastmod>
+    </url>
+    <url>
+        <loc>http://www.jamielennox.net/robots.txt</loc>
+        <lastmod>2014-06-04T07:10:21+10:00</lastmod>
     </url>
 </urlset>
