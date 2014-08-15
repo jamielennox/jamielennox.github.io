@@ -60,6 +60,8 @@ titlecase: true       # Converts page and post titles to titlecase
 # post_asides:
 # page_asides:
 
+sidebar: collapse
+
 # ----------------------- #
 #   3rd Party Settings    #
 # ----------------------- #
