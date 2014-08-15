@@ -1,0 +1,278 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Git Commands for Messy People - jamielennox.net</title>
+  <meta name="author" content="Jamie Lennox">
+
+  
+  <meta name="description" content="I am terrible at keeping my git branches in order.
+Particularly since I work across multiple machines and forget where things are I will often have &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.jamielennox.net/blog/2014/08/15/git-commands-for-messy-people">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="jamielennox.net" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Fjalla+One' rel='stylesheet' type='text/css'>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-44372550-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   class="collapse-sidebar sidebar-footer" >
+  <header role="banner"><hgroup>
+  <h1><a href="/">jamielennox.net</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+  
+  
+  
+  
+  
+<form action="https://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:www.jamielennox.net" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Git Commands for Messy People</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-08-15T10:59:00+10:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>15</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>10:59 am</span></time>
+        
+           | <a href="#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I am terrible at keeping my git branches in order.
+Particularly since I work across multiple machines and forget where things are I will often have multiple branches with different names being different versions of the same review.</p>
+
+<p>On a project I work on frequently I currently have 71 local branches which are a mix of my code, some code reviews, and some branches that were for trialling ideas.
+<a href="https://pypi.python.org/pypi/git-review">git review</a> at least prefixes branches it downloads with <code>review/</code> but that doesn&rsquo;t help to figure out what was happening with local branches labelled <code>auth</code> through <code>auth-4</code>.</p>
+
+<p>However this post isn&rsquo;t about me fixing my terrible habit it&rsquo;s about two git commands which help me work with the mess.</p>
+
+<p>The first is an alias which I called <code>branch-date</code>:</p>
+
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ini'><span class='line'><span class="k">[alias]</span>
+</span><span class='line'>    <span class="na">branch-date</span> <span class="o">=</span> <span class="s">&quot;!git for-each-ref --sort=committerdate --format=&#39;%1B[32m%(committerdate:iso8601) %1B[34m%(committerdate:relative) %1B[0;m%(refname:short)&#39; refs/heads/&quot;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+
+<p>This gives a nicely formatted list of branches in the project sorted by the last time they were committed to and how long ago it was.
+So if I know I&rsquo;m looking for a branch that I last worked on last week I can quickly locate those branches.</p>
+
+<p><img class="basic-alignment center" src="/images/branch-date.png" title="Naming scheme win!" alt="List of branches ordered by date"></p>
+
+<p>The next is a script to figure out which of my branches have made it through review and have been merged upstream which I called <code>branch-merged</code>.</p>
+
+<p>Using git you can already call <code>git branch --merged master</code> to determine which branches are fully merged into the <code>master</code> branch.
+However this won&rsquo;t take into account if a later version of a review was merged, in which case I can probably get rid of that branch.</p>
+
+<p>We can figure this out by using the <code>Commit-Id:</code> field of our Gerrit reviews.</p>
+
+<div><script src='https://gist.github.com/a7f8080e42ec795945b8.js?file=git-branch-merged.sh'></script>
+<noscript><pre><code>#!/bin/bash
+
+# create an associative array of all the changes
+declare -A MERGED
+for commit in `git log master | grep Change-Id | cut -d : -f 2`; do
+    MERGED[&quot;$commit&quot;]=1
+done
+
+for branch in `git branch | grep -v master`; do
+    found=1
+
+    # for every commit on the branch check to ensure its in master
+    for commit in `git log $branch | grep Change-Id | cut -d : -f 2`; do
+        if [[ ! ${MERGED[&quot;$commit&quot;]} ]]; then
+            # if it's not in master then this branch wasn't merged so we
+            # want to break out and not print its name.
+            found=0
+            break
+        fi
+    done
+
+    if [ $found = 1 ]; then
+        # if all of the Commit-Ids on branch were also in master then
+        # print out the branch name because we can probably get rid of it
+        echo $branch
+    fi
+done</code></pre></noscript></div>
+
+
+<p>So print out the branches where all the <code>Commit-Id</code>s are also in master.
+It&rsquo;s not greatly efficient and if you are working with code bases with long histories you might need to limit the depth, but given that it doesn&rsquo;t run often it completes quickly enough.</p>
+
+<p>There&rsquo;s no guarantee that there wasn&rsquo;t something new in those branches, but most likely it was an earlier review or test code that is no longer relevant.
+I was considering a tool that could use the <code>Commit-Id</code> to figure out from gerrit if a branch is an exact match to one that was previously up for review and so contained no possibly useful experimenting code, but teaching myself to clean up branches as I go is probably a better use of my time.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+
+
+  <span class="byline author vcard">Authored by <span class="fn">
+  
+    Jamie Lennox
+  
+  </span></span>
+
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-08-15T10:59:00+10:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>15</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>10:59 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/openstack/'>openstack</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/05/21/identity-uri-in-auth-token-middleware/" title="Previous Post: identity_uri in Auth Token Middleware">&laquo; identity_uri in Auth Token Middleware</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+
+</div>
+
+<aside class="sidebar">
+  
+    
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Jamie Lennox -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'jamielennox';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.jamielennox.net/blog/2014/08/15/git-commands-for-messy-people/';
+        var disqus_url = 'http://www.jamielennox.net/blog/2014/08/15/git-commands-for-messy-people/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

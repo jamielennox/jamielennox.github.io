@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://www.jamielennox.net/blog/2014/08/15/git-commands-for-messy-people/</loc>
+    <lastmod>2014-08-15T10:59:00+10:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://www.jamielennox.net/blog/2014/05/21/identity-uri-in-auth-token-middleware/</loc>
     <lastmod>2014-05-21T14:54:00+10:00</lastmod>
     <priority>0.8</priority>
@@ -53,28 +59,28 @@
   
   <url>
     <loc>http://www.jamielennox.net/blog/</loc>
-    <lastmod>2014-08-15T12:58:00+10:00</lastmod>
+    <lastmod>2014-08-15T14:24:44+10:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://www.jamielennox.net/blog/archives/</loc>
-    <lastmod>2014-08-15T12:58:00+10:00</lastmod>
+    <lastmod>2014-08-15T14:24:44+10:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://www.jamielennox.net/</loc>
-    <lastmod>2014-08-15T12:58:00+10:00</lastmod>
+    <lastmod>2014-08-15T14:24:44+10:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   
   <url>
     <loc>http://www.jamielennox.net/archives/</loc>
-    <lastmod>2014-08-15T12:58:00+10:00</lastmod>
+    <lastmod>2014-08-15T14:24:44+10:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

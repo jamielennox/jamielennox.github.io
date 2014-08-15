@@ -4,7 +4,7 @@
   <title><![CDATA[Category: openstack | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/openstack/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-08-15T12:58:00+10:00</updated>
+  <updated>2014-08-15T14:24:44+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,77 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Git Commands for Messy People]]></title>
+    <link href="http://www.jamielennox.net/blog/2014/08/15/git-commands-for-messy-people/"/>
+    <updated>2014-08-15T10:59:00+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2014/08/15/git-commands-for-messy-people</id>
+    <content type="html"><![CDATA[<p>I am terrible at keeping my git branches in order.
+Particularly since I work across multiple machines and forget where things are I will often have multiple branches with different names being different versions of the same review.</p>
+
+<p>On a project I work on frequently I currently have 71 local branches which are a mix of my code, some code reviews, and some branches that were for trialling ideas.
+<a href="https://pypi.python.org/pypi/git-review">git review</a> at least prefixes branches it downloads with <code>review/</code> but that doesn&rsquo;t help to figure out what was happening with local branches labelled <code>auth</code> through <code>auth-4</code>.</p>
+
+<p>However this post isn&rsquo;t about me fixing my terrible habit it&rsquo;s about two git commands which help me work with the mess.</p>
+
+<p>The first is an alias which I called <code>branch-date</code>:</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ini'><span class='line'><span class="k">[alias]</span>
+</span><span class='line'>    <span class="na">branch-date</span> <span class="o">=</span> <span class="s">&amp;ldquo;!git for-each-ref &amp;ndash;sort=committerdate &amp;ndash;format=&amp;lsquo;%1B[32m%(committerdate:iso8601) %1B[34m%(committerdate:relative) %1B[0;m%(refname:short)&amp;rsquo; refs/heads/&amp;rdquo;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This gives a nicely formatted list of branches in the project sorted by the last time they were committed to and how long ago it was.
+So if I know I&rsquo;m looking for a branch that I last worked on last week I can quickly locate those branches.</p>
+
+<p><img class="&ldquo;basic-alignment center&rdquo;" src="/images/branch-date.png" title="&ldquo;Naming scheme win!&rdquo; &ldquo;List of branches ordered by date&rdquo;" ></p>
+
+<p>The next is a script to figure out which of my branches have made it through review and have been merged upstream which I called <code>branch-merged</code>.</p>
+
+<p>Using git you can already call <code>git branch --merged master</code> to determine which branches are fully merged into the <code>master</code> branch.
+However this won&rsquo;t take into account if a later version of a review was merged, in which case I can probably get rid of that branch.</p>
+
+<p>We can figure this out by using the <code>Commit-Id:</code> field of our Gerrit reviews.</p>
+
+<p><div><script src='https://gist.github.com/a7f8080e42ec795945b8.js?file=git-branch-merged.sh'></script>
+<noscript><pre><code>#!/bin/bash
+
+# create an associative array of all the changes
+declare -A MERGED
+for commit in `git log master | grep Change-Id | cut -d : -f 2`; do
+    MERGED[&quot;$commit&quot;]=1
+done
+
+for branch in `git branch | grep -v master`; do
+    found=1
+
+    # for every commit on the branch check to ensure its in master
+    for commit in `git log $branch | grep Change-Id | cut -d : -f 2`; do
+        if [[ ! ${MERGED[&quot;$commit&quot;]} ]]; then
+            # if it's not in master then this branch wasn't merged so we
+            # want to break out and not print its name.
+            found=0
+            break
+        fi
+    done
+
+    if [ $found = 1 ]; then
+        # if all of the Commit-Ids on branch were also in master then
+        # print out the branch name because we can probably get rid of it
+        echo $branch
+    fi
+done</code></pre></noscript></div>
+</p>
+
+<p>So print out the branches where all the <code>Commit-Id</code>s are also in master.
+It&rsquo;s not greatly efficient and if you are working with code bases with long histories you might need to limit the depth, but given that it doesn&rsquo;t run often it completes quickly enough.</p>
+
+<p>There&rsquo;s no guarantee that there wasn&rsquo;t something new in those branches, but most likely it was an earlier review or test code that is no longer relevant.
+I was considering a tool that could use the <code>Commit-Id</code> to figure out from gerrit if a branch is an exact match to one that was previously up for review and so contained no possibly useful experimenting code, but teaching myself to clean up branches as I go is probably a better use of my time.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[identity_uri in Auth Token Middleware]]></title>
@@ -327,36 +398,6 @@ The only currently available value here is <code>kerberos</code> indicating that
 <p>For a deployment with access to a Kerberos or x509 infrastructure token binding will dramatically increase your user&rsquo;s security.
 Unfortunately the limitations of Kerberos within OpenStack don&rsquo;t really make this a viable deployment option in Havana.
 Watch this space however as we add x509 authentication and binding, and improve Kerberos handling throughout.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Keystone with HTTPd in devstack]]></title>
-    <link href="http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack/"/>
-    <updated>2013-09-30T13:53:00+10:00</updated>
-    <id>http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack</id>
-    <content type="html"><![CDATA[<p>Keystone has been slowly pushing away from being deployed with <a href="http://eventlet.net">Eventlet</a> and the <code>keystone-all</code> script in favour of the more traditional httpd mod_wsgi application method.
-There has been discussion of Eventlet&rsquo;s place in OpenStack <a href="http://davidhadas.wordpress.com/2012/05/14/asynchronousio/">before</a> and its (mis)use has led to numerous subtle bugs and problems, however from my opinion in Keystone the most important reasons to move away from Eventlet are:</p>
-
-<ul>
-<li>Eventlet does not support Kerberos authentication.</li>
-<li>pyOpenSSL only releases the GIL around some SSL verification commands.
-This leads to a series of hacks to prevent long running crypto commands blocking Eventlet threads and thus the entire Keystone process.</li>
-<li>There are already a lot of httpd authentication/authorization plugins that we could make use of in Keystone.</li>
-<li>It&rsquo;s faster to have things handled by httpd modules in C than in Python.</li>
-</ul>
-
-
-<p>Keystone has shipped with sample WSGI scripts and httpd configuration files since Foslom and documentation for how to use them <a href="http://docs.openstack.org/developer/keystone/apache-httpd.html">is available</a> however most guides and service wrappers (upstart, systemd etc) will use the <code>keystone-all</code> method.</p>
-
-<p>To get some wider adoption and understanding of the process I&rsquo;ve just added Keystone with httpd support into devstack.
-Simply set:
-<code>
-APACHE_ENABLED_SERVICES=key
-</code>
-in your localrc or environment variables and re-run <code>./stack.sh</code> to try it out.</p>
-
-<p>P.S. Swift can also be deployed this way by adding <code>swift</code> to the (comma separated) services list.</p>
 ]]></content>
   </entry>
   

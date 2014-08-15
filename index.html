@@ -9,7 +9,8 @@
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="As part of the 0.8 release of keystoneclient (2014-04-17) we made an update to the way that you configure auth_token middleware in OpenStack. &hellip;">
+  <meta name="description" content="I am terrible at keeping my git branches in order.
+Particularly since I work across multiple machines and forget where things are I will often have &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -80,6 +81,101 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/08/15/git-commands-for-messy-people/">Git Commands for Messy People</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-08-15T10:59:00+10:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>15</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>10:59 am</span></time>
+        
+           | <a href="/blog/2014/08/15/git-commands-for-messy-people/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2014/08/15/git-commands-for-messy-people/">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I am terrible at keeping my git branches in order.
+Particularly since I work across multiple machines and forget where things are I will often have multiple branches with different names being different versions of the same review.</p>
+
+<p>On a project I work on frequently I currently have 71 local branches which are a mix of my code, some code reviews, and some branches that were for trialling ideas.
+<a href="https://pypi.python.org/pypi/git-review">git review</a> at least prefixes branches it downloads with <code>review/</code> but that doesn&rsquo;t help to figure out what was happening with local branches labelled <code>auth</code> through <code>auth-4</code>.</p>
+
+<p>However this post isn&rsquo;t about me fixing my terrible habit it&rsquo;s about two git commands which help me work with the mess.</p>
+
+<p>The first is an alias which I called <code>branch-date</code>:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ini'><span class='line'><span class="k">[alias]</span>
+</span><span class='line'>    <span class="na">branch-date</span> <span class="o">=</span> <span class="s">&quot;!git for-each-ref --sort=committerdate --format=&#39;%1B[32m%(committerdate:iso8601) %1B[34m%(committerdate:relative) %1B[0;m%(refname:short)&#39; refs/heads/&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This gives a nicely formatted list of branches in the project sorted by the last time they were committed to and how long ago it was.
+So if I know I&rsquo;m looking for a branch that I last worked on last week I can quickly locate those branches.</p>
+
+<p><img class="basic-alignment center" src="/images/branch-date.png" title="Naming scheme win!" alt="List of branches ordered by date"></p>
+
+<p>The next is a script to figure out which of my branches have made it through review and have been merged upstream which I called <code>branch-merged</code>.</p>
+
+<p>Using git you can already call <code>git branch --merged master</code> to determine which branches are fully merged into the <code>master</code> branch.
+However this won&rsquo;t take into account if a later version of a review was merged, in which case I can probably get rid of that branch.</p>
+
+<p>We can figure this out by using the <code>Commit-Id:</code> field of our Gerrit reviews.</p>
+
+<div><script src='https://gist.github.com/a7f8080e42ec795945b8.js?file=git-branch-merged.sh'></script>
+<noscript><pre><code>#!/bin/bash
+
+# create an associative array of all the changes
+declare -A MERGED
+for commit in `git log master | grep Change-Id | cut -d : -f 2`; do
+    MERGED[&quot;$commit&quot;]=1
+done
+
+for branch in `git branch | grep -v master`; do
+    found=1
+
+    # for every commit on the branch check to ensure its in master
+    for commit in `git log $branch | grep Change-Id | cut -d : -f 2`; do
+        if [[ ! ${MERGED[&quot;$commit&quot;]} ]]; then
+            # if it's not in master then this branch wasn't merged so we
+            # want to break out and not print its name.
+            found=0
+            break
+        fi
+    done
+
+    if [ $found = 1 ]; then
+        # if all of the Commit-Ids on branch were also in master then
+        # print out the branch name because we can probably get rid of it
+        echo $branch
+    fi
+done</code></pre></noscript></div>
+
+
+<p>So print out the branches where all the <code>Commit-Id</code>s are also in master.
+It&rsquo;s not greatly efficient and if you are working with code bases with long histories you might need to limit the depth, but given that it doesn&rsquo;t run often it completes quickly enough.</p>
+
+<p>There&rsquo;s no guarantee that there wasn&rsquo;t something new in those branches, but most likely it was an earlier review or test code that is no longer relevant.
+I was considering a tool that could use the <code>Commit-Id</code> to figure out from gerrit if a branch is an exact match to one that was previously up for review and so contained no possibly useful experimenting code, but teaching myself to clean up branches as I go is probably a better use of my time.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
