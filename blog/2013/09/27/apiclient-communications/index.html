@@ -24,7 +24,7 @@
   <link href="/atom.xml" rel="alternate" title="jamielennox.net" type="application/atom+xml">
   <script src="/javascripts/modernizr-2.0.js"></script>
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
   <script src="/javascripts/octopress.js" type="text/javascript"></script>
   <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
 <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
@@ -38,7 +38,7 @@
 
     (function() {
       var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
       var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
     })();
   </script>
@@ -58,7 +58,12 @@
   
 </ul>
   
-<form action="http://google.com/search" method="get">
+  
+  
+  
+  
+  
+<form action="https://google.com/search" method="get">
   <fieldset role="search">
     <input type="hidden" name="q" value="site:www.jamielennox.net" />
     <input class="search" type="text" name="q" results="0" placeholder="Search"/>
@@ -78,7 +83,9 @@
   
   <header>
     
-      <h1 class="entry-title">APIClient Communications</h1>
+      
+        <h1 class="entry-title">APIClient Communications</h1>
+      
     
     
       <p class="meta">
@@ -87,16 +94,10 @@
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2013-09-27T15:27:00+10:00" pubdate data-updated="true">Sep 27<span>th</span>, 2013</time>
+<time class='entry-date' datetime='2013-09-27T15:27:00+10:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>3:27 pm</span></time>
         
-         | <a href="#disqus_thread">Comments</a>
+           | <a href="#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net">Comments</a>
         
       </p>
     
@@ -145,7 +146,7 @@ Maintaining the plugin architecture is preferred here to simply having multiple 
 
 <p>So an example of the new workflow is:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -171,7 +172,7 @@ Maintaining the plugin architecture is preferred here to simply having multiple 
 </span><span class='line'>
 </span><span class='line'><span class="n">keystone_client</span> <span class="o">=</span> <span class="n">v3_client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">client_session</span><span class="p">)</span>
 </span><span class='line'><span class="n">nova_client</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">client_session</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>It is obviously a little longer than the current method but I&rsquo;m sure that the old syntax can be maintained for when you only need a single client.</p>
@@ -191,21 +192,21 @@ Much of what is currently on keystoneclient that will be moved is defined public
       
   
 
-<span class="byline author vcard">Posted by <span class="fn">Jamie Lennox</span></span>
+
+
+  <span class="byline author vcard">Authored by <span class="fn">
+  
+    Jamie Lennox
+  
+  </span></span>
+
 
       
 
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2013-09-27T15:27:00+10:00" pubdate data-updated="true">Sep 27<span>th</span>, 2013</time>
+<time class='entry-date' datetime='2013-09-27T15:27:00+10:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>3:27 pm</span></time>
       
 
 <span class="categories">
@@ -272,7 +273,7 @@ Much of what is currently on keystoneclient that will be moved is defined public
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
     }());
 </script>

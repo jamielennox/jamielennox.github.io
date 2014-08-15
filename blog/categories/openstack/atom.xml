@@ -4,7 +4,7 @@
   <title><![CDATA[Category: openstack | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/openstack/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-06-04T07:18:27+10:00</updated>
+  <updated>2014-08-15T12:58:00+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -22,33 +22,29 @@
 
 <p>Previously you specify the path to the keystone server as a number of individual parameters such as:</p>
 
-<p><code>
-[keystone_authtoken]
+<pre><code>[keystone_authtoken]
 auth_protocol = http
 auth_port = 35357
 auth_host = 127.0.0.1
 auth_admin_prefix =
-</code></p>
+</code></pre>
 
 <p>This made sense in code when using httplib for communication where you use each of those independent pieces.
 However we removed httplib a number of releases ago and now simply reconstruct the full URL in code in the form:</p>
 
-<p><code>
-%(auth_protocol)s://%(auth_host)s:%(auth_port)d/%(auth_admin_prefix)s
-</code></p>
+<pre><code>%(auth_protocol)s://%(auth_host)s:%(auth_port)d/%(auth_admin_prefix)s
+</code></pre>
 
 <p>This format is much more intuitive for configuration and so should now be used with the key <strong>identity_uri</strong>. e.g.</p>
 
-<p><code>
-[keystone_authtoken]
+<pre><code>[keystone_authtoken]
 identity_uri = http://127.0.0.1:35357
-</code></p>
+</code></pre>
 
 <p>Using the original format will continue to work but you&rsquo;ll see a deprecation message like:</p>
 
-<p><code>
-WARNING keystoneclient.middleware.auth_token [-] Configuring admin URI using auth fragments. This is deprecated, use 'identity_uri' instead.
-</code></p>
+<pre><code>WARNING keystoneclient.middleware.auth_token [-] Configuring admin URI using auth fragments. This is deprecated, use 'identity_uri' instead.
+</code></pre>
 ]]></content>
   </entry>
   
@@ -65,45 +61,31 @@ I write this in an attempt to show the direction of clients as there is currentl
 
 <p>When working with clients you would first create an authentication object, then create a session object with that authentication and then re-use that session object across all the clients you instantiate.</p>
 
-<p>```python</p>
-
-<p>from keystoneclient.auth.identity import v2
+<pre><code class="python">
+from keystoneclient.auth.identity import v2
 from keystoneclient import session
-from keystoneclient.v2_0 import client</p>
+from keystoneclient.v2_0 import client
 
-<p>auth = v2.Password(auth_url=&lsquo;<a href="https://localhost:5000/v2.0">https://localhost:5000/v2.0</a>&rsquo;,</p>
+auth = v2.Password(auth_url='https://localhost:5000/v2.0',
+                   username='user',
+                   password='pass',
+                   tenant_name='demo')
 
-<pre><code>               username='user',
-               password='pass',
-               tenant_name='demo')
+sess = session.Session(auth=auth,
+                       verify='/path/to/ca.pem')
+
+ksclient = client.Client(session=sess,
+                         region_name='RegionOne')
+# other clients can be created sharing the sess parameter
 </code></pre>
-
-<p>sess = session.Session(auth=auth,</p>
-
-<pre><code>                   verify='/path/to/ca.pem')
-</code></pre>
-
-<p>ksclient = client.Client(session=sess,</p>
-
-<pre><code>                     region_name='RegionOne')
-</code></pre>
-
-<h1>other clients can be created sharing the sess parameter</h1>
-
-<p>```</p>
 
 <p>Now whenever you want to make an authenticated request you just indicated it as part of the request call.</p>
 
-<p>```python</p>
-
-<h1>requests with authenticated are sent with a token</h1>
-
-<p>users = sess.get(&lsquo;<a href="http://localhost:35357/v2.0/users">http://localhost:35357/v2.0/users</a>&rsquo;,</p>
-
-<pre><code>             authenticated=True)
+<pre><code class="python">
+# requests with authenticated are sent with a token
+users = sess.get('http://localhost:35357/v2.0/users',
+                 authenticated=True)
 </code></pre>
-
-<p>```</p>
 
 <p>This was pretty much the extent of the initial proposal, however in working with the plugins I have come to realize that authentication is responsible for much more than simply getting a token.</p>
 
@@ -113,26 +95,20 @@ Because of the disjointed way in which clients have been developed this service 
 
 <p>With a session object in control of authentication and the service catalog there is no reason for a client to know its URL, just what it wants to communicate.</p>
 
-<p>```python</p>
-
-<p>users = sess.get(&lsquo;/users&rsquo;,</p>
-
-<pre><code>             authenticated=True,
-             service_type='identity',
-             endpoint_type='admin',
-             region_name='RegionOne')
+<pre><code class="python">
+users = sess.get('/users',
+                 authenticated=True,
+                 service_type='identity',
+                 endpoint_type='admin',
+                 region_name='RegionOne')
 </code></pre>
-
-<p>```</p>
 
 <p>The values of <code>service_type</code> and <code>endpoint_type</code> are well known and constant to a client, <code>region_name</code> is generally passed in when instantiating (if required).
 Requests made via the client object will have these parameters added automatically, so given the client from above the following call is exactly the same:</p>
 
-<p>```python</p>
-
-<p>users = ksclient.get(&lsquo;/users&rsquo;)</p>
-
-<p>```</p>
+<pre><code class="python">
+users = ksclient.get('/users')
+</code></pre>
 
 <p>Where I feel that this will really begin to help though is in dealing with the transition between API versions.</p>
 
@@ -142,24 +118,17 @@ The agreed solution long-term is that entries in the service catalog should not 
 So how do we handle this transition across the 8+ clients?
 Easy:</p>
 
-<p>```python</p>
-
-<p>try:</p>
-
-<pre><code>users = sess.get('/users',
-                 authenticated=True,
-                 service_type='identity',
-                 endpoint_type='admin',
-                 region_name='RegionOne',
-                 version=(2, 0))  # just specify the version you need
+<pre><code class="python">
+try:
+    users = sess.get('/users',
+                     authenticated=True,
+                     service_type='identity',
+                     endpoint_type='admin',
+                     region_name='RegionOne',
+                     version=(2, 0))  # just specify the version you need
+except keystoneclient.exceptions.EndpointNotFound:
+    logging.error('No v2 identity endpoint available', exc_info=True)
 </code></pre>
-
-<p>except keystoneclient.exceptions.EndpointNotFound:</p>
-
-<pre><code>logging.error('No v2 identity endpoint available', exc_info=True)
-</code></pre>
-
-<p>```</p>
 
 <p>This solution also means that when we have a suitable hack for the transition to unversioned endpoints it needs only be implemented in one place.</p>
 
@@ -170,47 +139,29 @@ For newer projects there is now a definitive specification <a href="https://wiki
 <p>A major advantage of this common approach is we now have a standard way of determining whether a version of a project is available in this cloud.
 Therefore we get client version discovery pretty much for free:</p>
 
-<p>```python</p>
-
-<p>if sess.is_available(service_type=&lsquo;identity&rsquo;,</p>
-
-<pre><code>                 version=(2,0)):
-ksclient = v2_0.client.Client(sess)
+<pre><code class="python">
+if sess.is_available(service_type='identity',
+                     version=(2,0)):
+    ksclient = v2_0.client.Client(sess)
+else:
+    logging.error("Can't create a v2 identity client")
 </code></pre>
-
-<p>else:</p>
-
-<pre><code>logging.error("Can't create a v2 identity client")
-</code></pre>
-
-<p>```</p>
 
 <p>That&rsquo;s a little verbose as a client knows that information, so we can extract a wrapper:</p>
 
-<p>```python</p>
-
-<p>if v2_0.client.Client.is_available(sess):</p>
-
-<pre><code>ksclient = v2_0.client.Client(sess)
+<pre><code class="python">
+if v2_0.client.Client.is_available(sess):
+    ksclient = v2_0.client.Client(sess)
 </code></pre>
-
-<p>```</p>
 
 <p>or simply:</p>
 
-<p>```python</p>
-
-<p>ksclient = keystoneclient.client.Client(session=sess,</p>
-
-<pre><code>                                    version=(2,0))
+<pre><code class="python">
+ksclient = keystoneclient.client.Client(session=sess,
+                                        version=(2,0))
+if ksclient:
+    # do stuff
 </code></pre>
-
-<p>if ksclient:</p>
-
-<pre><code># do stuff
-</code></pre>
-
-<p>```</p>
 
 <p>So the session object has evolved from a pure transport level object and this departure is somewhat concerning as I don&rsquo;t like mixing layers of responsibility.
 However in practice we have standardized on the <a href="http://www.python-requests.org">requests</a> library to abstract much of this away and the Session object is providing helpers around this.</p>
@@ -220,7 +171,7 @@ However in practice we have standardized on the <a href="http://www.python-reque
 <ul>
 <li>reduce the basic client down to an object consisting of a few variables indicating the service type and version required.</li>
 <li>finally get a common service discovery mechanism for all the clients.</li>
-<li>shift the problem of API version migration onto someone else &ndash; probably me.</li>
+<li>shift the problem of API version migration onto someone else - probably me.</li>
 </ul>
 
 
@@ -258,17 +209,15 @@ There are other guides out there but the basic concept is simply to set PYTHONDO
 
 <p>Add to <em>~/.virtualenvs/postactivate</em>:</p>
 
-<p><code>bash
-export _PYTHONDONTWRITEBYTECODE=$PYTHONDONTWRITEBYTECODE
+<pre><code class="bash">export _PYTHONDONTWRITEBYTECODE=$PYTHONDONTWRITEBYTECODE
 export PYTHONDONTWRITEBYTECODE=1
-</code></p>
+</code></pre>
 
 <p>Add to <em>~/.virtualenvs/predeactivate</em>:</p>
 
-<p><code>bash
-export PYTHONDONTWRITEBYTECODE=$_PYTHONDONTWRITEBYTECODE
+<pre><code class="bash">export PYTHONDONTWRITEBYTECODE=$_PYTHONDONTWRITEBYTECODE
 unset _PYTHONDONTWRITEBYETCODE
-</code></p>
+</code></pre>
 ]]></content>
   </entry>
   

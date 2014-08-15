@@ -4,7 +4,7 @@
   <title><![CDATA[Category: python | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-06-04T07:18:27+10:00</updated>
+  <updated>2014-08-15T12:58:00+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -33,17 +33,15 @@ There are other guides out there but the basic concept is simply to set PYTHONDO
 
 <p>Add to <em>~/.virtualenvs/postactivate</em>:</p>
 
-<p><code>bash
-export _PYTHONDONTWRITEBYTECODE=$PYTHONDONTWRITEBYTECODE
+<pre><code class="bash">export _PYTHONDONTWRITEBYTECODE=$PYTHONDONTWRITEBYTECODE
 export PYTHONDONTWRITEBYTECODE=1
-</code></p>
+</code></pre>
 
 <p>Add to <em>~/.virtualenvs/predeactivate</em>:</p>
 
-<p><code>bash
-export PYTHONDONTWRITEBYTECODE=$_PYTHONDONTWRITEBYTECODE
+<pre><code class="bash">export PYTHONDONTWRITEBYTECODE=$_PYTHONDONTWRITEBYTECODE
 unset _PYTHONDONTWRITEBYETCODE
-</code></p>
+</code></pre>
 ]]></content>
   </entry>
   

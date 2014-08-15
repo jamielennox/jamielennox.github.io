@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>identity_uri in Auth Token Middleware - jamielennox.net</title>
+  <title>Identity_uri in Auth Token Middleware - jamielennox.net</title>
   <meta name="author" content="Jamie Lennox">
 
   
@@ -24,7 +24,7 @@
   <link href="/atom.xml" rel="alternate" title="jamielennox.net" type="application/atom+xml">
   <script src="/javascripts/modernizr-2.0.js"></script>
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
   <script src="/javascripts/octopress.js" type="text/javascript"></script>
   <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
 <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
@@ -38,7 +38,7 @@
 
     (function() {
       var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
       var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
     })();
   </script>
@@ -58,7 +58,12 @@
   
 </ul>
   
-<form action="http://google.com/search" method="get">
+  
+  
+  
+  
+  
+<form action="https://google.com/search" method="get">
   <fieldset role="search">
     <input type="hidden" name="q" value="site:www.jamielennox.net" />
     <input class="search" type="text" name="q" results="0" placeholder="Search"/>
@@ -78,7 +83,9 @@
   
   <header>
     
-      <h1 class="entry-title">Identity_uri in Auth Token Middleware</h1>
+      
+        <h1 class="entry-title">Identity_uri in Auth Token Middleware</h1>
+      
     
     
       <p class="meta">
@@ -87,16 +94,10 @@
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2014-05-21T14:54:00+10:00" pubdate data-updated="true">May 21<span>st</span>, 2014</time>
+<time class='entry-date' datetime='2014-05-21T14:54:00+10:00'><span class='date'><span class='date-month'>May</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2014</span></span> <span class='time'>2:54 pm</span></time>
         
-         | <a href="#disqus_thread">Comments</a>
+           | <a href="#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net">Comments</a>
         
       </p>
     
@@ -107,7 +108,7 @@
 
 <p>Previously you specify the path to the keystone server as a number of individual parameters such as:</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -116,28 +117,28 @@
 </span><span class='line'>auth_protocol = http
 </span><span class='line'>auth_port = 35357
 </span><span class='line'>auth_host = 127.0.0.1
-</span><span class='line'>auth_admin_prefix =</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'>auth_admin_prefix =</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>This made sense in code when using httplib for communication where you use each of those independent pieces.
 However we removed httplib a number of releases ago and now simply reconstruct the full URL in code in the form:</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>%(auth_protocol)s://%(auth_host)s:%(auth_port)d/%(auth_admin_prefix)s</span></code></pre></td></tr></table></div></figure>
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>%(auth_protocol)s://%(auth_host)s:%(auth_port)d/%(auth_admin_prefix)s</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>This format is much more intuitive for configuration and so should now be used with the key <strong>identity_uri</strong>. e.g.</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class=''><span class='line'>[keystone_authtoken]
-</span><span class='line'>identity_uri = http://127.0.0.1:35357</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'>identity_uri = http://127.0.0.1:35357</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>Using the original format will continue to work but you&rsquo;ll see a deprecation message like:</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>WARNING keystoneclient.middleware.auth_token [-] Configuring admin URI using auth fragments. This is deprecated, use 'identity_uri' instead.</span></code></pre></td></tr></table></div></figure>
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>WARNING keystoneclient.middleware.auth_token [-] Configuring admin URI using auth fragments. This is deprecated, use 'identity_uri' instead.</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 </div>
 
@@ -147,21 +148,21 @@ However we removed httplib a number of releases ago and now simply reconstruct t
       
   
 
-<span class="byline author vcard">Posted by <span class="fn">Jamie Lennox</span></span>
+
+
+  <span class="byline author vcard">Authored by <span class="fn">
+  
+    Jamie Lennox
+  
+  </span></span>
+
 
       
 
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2014-05-21T14:54:00+10:00" pubdate data-updated="true">May 21<span>st</span>, 2014</time>
+<time class='entry-date' datetime='2014-05-21T14:54:00+10:00'><span class='date'><span class='date-month'>May</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2014</span></span> <span class='time'>2:54 pm</span></time>
       
 
 <span class="categories">
@@ -226,7 +227,7 @@ However we removed httplib a number of releases ago and now simply reconstruct t
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
     }());
 </script>

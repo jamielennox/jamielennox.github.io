@@ -4,7 +4,7 @@
   <title><![CDATA[Category: keystone | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/keystone/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-06-04T07:18:27+10:00</updated>
+  <updated>2014-08-15T12:58:00+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -22,33 +22,29 @@
 
 <p>Previously you specify the path to the keystone server as a number of individual parameters such as:</p>
 
-<p><code>
-[keystone_authtoken]
+<pre><code>[keystone_authtoken]
 auth_protocol = http
 auth_port = 35357
 auth_host = 127.0.0.1
 auth_admin_prefix =
-</code></p>
+</code></pre>
 
 <p>This made sense in code when using httplib for communication where you use each of those independent pieces.
 However we removed httplib a number of releases ago and now simply reconstruct the full URL in code in the form:</p>
 
-<p><code>
-%(auth_protocol)s://%(auth_host)s:%(auth_port)d/%(auth_admin_prefix)s
-</code></p>
+<pre><code>%(auth_protocol)s://%(auth_host)s:%(auth_port)d/%(auth_admin_prefix)s
+</code></pre>
 
 <p>This format is much more intuitive for configuration and so should now be used with the key <strong>identity_uri</strong>. e.g.</p>
 
-<p><code>
-[keystone_authtoken]
+<pre><code>[keystone_authtoken]
 identity_uri = http://127.0.0.1:35357
-</code></p>
+</code></pre>
 
 <p>Using the original format will continue to work but you&rsquo;ll see a deprecation message like:</p>
 
-<p><code>
-WARNING keystoneclient.middleware.auth_token [-] Configuring admin URI using auth fragments. This is deprecated, use 'identity_uri' instead.
-</code></p>
+<pre><code>WARNING keystoneclient.middleware.auth_token [-] Configuring admin URI using auth fragments. This is deprecated, use 'identity_uri' instead.
+</code></pre>
 ]]></content>
   </entry>
   
@@ -238,24 +234,20 @@ Maintaining the plugin architecture is preferred here to simply having multiple 
 
 <p>So an example of the new workflow is:</p>
 
-<p>```python
-from keystoneclient.auth.identity import v3_auth
+<pre><code class="python">from keystoneclient.auth.identity import v3_auth
 from keystoneclient import session
 from keystoneclient.v3 import client as v3_client
-from novaclient.v1_1 import client</p>
+from novaclient.v1_1 import client
 
-<p>auth = v3_auth.Auth(username=&lsquo;username&rsquo;,</p>
+auth = v3_auth.Auth(username='username',
+                    password='password',
+                    project_id='project_id',
+                    auth_url='https://keystone.example.com')
+client_session = session.ClientSession(auth)
 
-<pre><code>                password='password',
-                project_id='project_id',
-                auth_url='https://keystone.example.com')
-</code></pre>
-
-<p>client_session = session.ClientSession(auth)</p>
-
-<p>keystone_client = v3_client.Client(client_session)
+keystone_client = v3_client.Client(client_session)
 nova_client = client.Client(client_session)
-```</p>
+</code></pre>
 
 <p>It is obviously a little longer than the current method but I&rsquo;m sure that the old syntax can be maintained for when you only need a single client.</p>
 

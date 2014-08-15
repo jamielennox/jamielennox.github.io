@@ -25,7 +25,7 @@ The concept was discussed and generally accepted at the Hong Kong Summit that ke
   <link href="/atom.xml" rel="alternate" title="jamielennox.net" type="application/atom+xml">
   <script src="/javascripts/modernizr-2.0.js"></script>
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
   <script src="/javascripts/octopress.js" type="text/javascript"></script>
   <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
 <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
@@ -39,7 +39,7 @@ The concept was discussed and generally accepted at the Hong Kong Summit that ke
 
     (function() {
       var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
       var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
     })();
   </script>
@@ -59,7 +59,12 @@ The concept was discussed and generally accepted at the Hong Kong Summit that ke
   
 </ul>
   
-<form action="http://google.com/search" method="get">
+  
+  
+  
+  
+  
+<form action="https://google.com/search" method="get">
   <fieldset role="search">
     <input type="hidden" name="q" value="site:www.jamielennox.net" />
     <input class="search" type="text" name="q" results="0" placeholder="Search"/>
@@ -79,7 +84,9 @@ The concept was discussed and generally accepted at the Hong Kong Summit that ke
   
   <header>
     
-      <h1 class="entry-title">Client Session Objects</h1>
+      
+        <h1 class="entry-title">Client Session Objects</h1>
+      
     
     
       <p class="meta">
@@ -88,16 +95,10 @@ The concept was discussed and generally accepted at the Hong Kong Summit that ke
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2014-02-24T13:32:00+10:00" pubdate data-updated="true">Feb 24<span>th</span>, 2014</time>
+<time class='entry-date' datetime='2014-02-24T13:32:00+10:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>1:32 pm</span></time>
         
-         | <a href="#disqus_thread">Comments</a>
+           | <a href="#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net">Comments</a>
         
       </p>
     
@@ -112,7 +113,7 @@ I write this in an attempt to show the direction of clients as there is currentl
 
 <p>When working with clients you would first create an authentication object, then create a session object with that authentication and then re-use that session object across all the clients you instantiate.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -142,18 +143,18 @@ I write this in an attempt to show the direction of clients as there is currentl
 </span><span class='line'><span class="n">ksclient</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">sess</span><span class="p">,</span>
 </span><span class='line'>                         <span class="n">region_name</span><span class="o">=</span><span class="s">&#39;RegionOne&#39;</span><span class="p">)</span>
 </span><span class='line'><span class="c"># other clients can be created sharing the sess parameter</span>
-</span></code></pre></td></tr></table></div></figure>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>Now whenever you want to make an authenticated request you just indicated it as part of the request call.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># requests with authenticated are sent with a token</span>
 </span><span class='line'><span class="n">users</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;http://localhost:35357/v2.0/users&#39;</span><span class="p">,</span>
 </span><span class='line'>                 <span class="n">authenticated</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>This was pretty much the extent of the initial proposal, however in working with the plugins I have come to realize that authentication is responsible for much more than simply getting a token.</p>
@@ -164,7 +165,7 @@ Because of the disjointed way in which clients have been developed this service 
 
 <p>With a session object in control of authentication and the service catalog there is no reason for a client to know its URL, just what it wants to communicate.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -174,15 +175,15 @@ Because of the disjointed way in which clients have been developed this service 
 </span><span class='line'>                 <span class="n">service_type</span><span class="o">=</span><span class="s">&#39;identity&#39;</span><span class="p">,</span>
 </span><span class='line'>                 <span class="n">endpoint_type</span><span class="o">=</span><span class="s">&#39;admin&#39;</span><span class="p">,</span>
 </span><span class='line'>                 <span class="n">region_name</span><span class="o">=</span><span class="s">&#39;RegionOne&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>The values of <code>service_type</code> and <code>endpoint_type</code> are well known and constant to a client, <code>region_name</code> is generally passed in when instantiating (if required).
 Requests made via the client object will have these parameters added automatically, so given the client from above the following call is exactly the same:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">users</span> <span class="o">=</span> <span class="n">ksclient</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/users&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>Where I feel that this will really begin to help though is in dealing with the transition between API versions.</p>
@@ -193,7 +194,7 @@ The agreed solution long-term is that entries in the service catalog should not 
 So how do we handle this transition across the 8+ clients?
 Easy:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -211,7 +212,7 @@ Easy:</p>
 </span><span class='line'>                     <span class="n">version</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>  <span class="c"># just specify the version you need</span>
 </span><span class='line'><span class="k">except</span> <span class="n">keystoneclient</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">EndpointNotFound</span><span class="p">:</span>
 </span><span class='line'>    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;No v2 identity endpoint available&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>This solution also means that when we have a suitable hack for the transition to unversioned endpoints it needs only be implemented in one place.</p>
@@ -223,7 +224,7 @@ For newer projects there is now a definitive specification <a href="https://wiki
 <p>A major advantage of this common approach is we now have a standard way of determining whether a version of a project is available in this cloud.
 Therefore we get client version discovery pretty much for free:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -233,21 +234,21 @@ Therefore we get client version discovery pretty much for free:</p>
 </span><span class='line'>    <span class="n">ksclient</span> <span class="o">=</span> <span class="n">v2_0</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">sess</span><span class="p">)</span>
 </span><span class='line'><span class="k">else</span><span class="p">:</span>
 </span><span class='line'>    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Can&#39;t create a v2 identity client&quot;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>That&rsquo;s a little verbose as a client knows that information, so we can extract a wrapper:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="n">v2_0</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="o">.</span><span class="n">is_available</span><span class="p">(</span><span class="n">sess</span><span class="p">):</span>
 </span><span class='line'>    <span class="n">ksclient</span> <span class="o">=</span> <span class="n">v2_0</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">sess</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>or simply:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -255,7 +256,7 @@ Therefore we get client version discovery pretty much for free:</p>
 </span><span class='line'>                                        <span class="n">version</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
 </span><span class='line'><span class="k">if</span> <span class="n">ksclient</span><span class="p">:</span>
 </span><span class='line'>    <span class="c"># do stuff</span>
-</span></code></pre></td></tr></table></div></figure>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>So the session object has evolved from a pure transport level object and this departure is somewhat concerning as I don&rsquo;t like mixing layers of responsibility.
@@ -266,7 +267,7 @@ However in practice we have standardized on the <a href="http://www.python-reque
 <ul>
 <li>reduce the basic client down to an object consisting of a few variables indicating the service type and version required.</li>
 <li>finally get a common service discovery mechanism for all the clients.</li>
-<li>shift the problem of API version migration onto someone else &ndash; probably me.</li>
+<li>shift the problem of API version migration onto someone else - probably me.</li>
 </ul>
 
 
@@ -289,21 +290,21 @@ In Juno we should have hierarchical regions and then it may make sense to allow 
       
   
 
-<span class="byline author vcard">Posted by <span class="fn">Jamie Lennox</span></span>
+
+
+  <span class="byline author vcard">Authored by <span class="fn">
+  
+    Jamie Lennox
+  
+  </span></span>
+
 
       
 
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2014-02-24T13:32:00+10:00" pubdate data-updated="true">Feb 24<span>th</span>, 2014</time>
+<time class='entry-date' datetime='2014-02-24T13:32:00+10:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>1:32 pm</span></time>
       
 
 <span class="categories">
@@ -370,7 +371,7 @@ In Juno we should have hierarchical regions and then it may make sense to allow 
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
     }());
 </script>

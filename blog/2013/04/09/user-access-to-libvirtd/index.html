@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>User access to libvirtd - jamielennox.net</title>
+  <title>User Access to Libvirtd - jamielennox.net</title>
   <meta name="author" content="Jamie Lennox">
 
   
@@ -25,7 +25,7 @@ Create a new file in &hellip;">
   <link href="/atom.xml" rel="alternate" title="jamielennox.net" type="application/atom+xml">
   <script src="/javascripts/modernizr-2.0.js"></script>
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
   <script src="/javascripts/octopress.js" type="text/javascript"></script>
   <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
 <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
@@ -39,7 +39,7 @@ Create a new file in &hellip;">
 
     (function() {
       var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
       var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
     })();
   </script>
@@ -59,7 +59,12 @@ Create a new file in &hellip;">
   
 </ul>
   
-<form action="http://google.com/search" method="get">
+  
+  
+  
+  
+  
+<form action="https://google.com/search" method="get">
   <fieldset role="search">
     <input type="hidden" name="q" value="site:www.jamielennox.net" />
     <input class="search" type="text" name="q" results="0" placeholder="Search"/>
@@ -79,7 +84,9 @@ Create a new file in &hellip;">
   
   <header>
     
-      <h1 class="entry-title">User Access to Libvirtd</h1>
+      
+        <h1 class="entry-title">User Access to Libvirtd</h1>
+      
     
     
       <p class="meta">
@@ -88,16 +95,10 @@ Create a new file in &hellip;">
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2013-04-09T11:50:00+10:00" pubdate data-updated="true">Apr 9<span>th</span>, 2013</time>
+<time class='entry-date' datetime='2013-04-09T11:50:00+10:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>9</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>11:50 am</span></time>
         
-         | <a href="#disqus_thread">Comments</a>
+           | <a href="#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net">Comments</a>
         
       </p>
     
@@ -113,7 +114,7 @@ Create a new file in &hellip;">
 </ol>
 
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -124,7 +125,7 @@ Create a new file in &hellip;">
 </span><span class='line'>        subject.isInGroup('libvirt') ) {
 </span><span class='line'>        return polkit.Result.YES;
 </span><span class='line'>    }
-</span><span class='line'>});</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'>});</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 
@@ -136,21 +137,21 @@ Create a new file in &hellip;">
       
   
 
-<span class="byline author vcard">Posted by <span class="fn">Jamie Lennox</span></span>
+
+
+  <span class="byline author vcard">Authored by <span class="fn">
+  
+    Jamie Lennox
+  
+  </span></span>
+
 
       
 
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2013-04-09T11:50:00+10:00" pubdate data-updated="true">Apr 9<span>th</span>, 2013</time>
+<time class='entry-date' datetime='2013-04-09T11:50:00+10:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>9</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>11:50 am</span></time>
       
 
 <span class="categories">
@@ -217,7 +218,7 @@ Create a new file in &hellip;">
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
     }());
 </script>

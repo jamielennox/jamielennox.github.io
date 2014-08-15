@@ -24,7 +24,7 @@
   <link href="/atom.xml" rel="alternate" title="jamielennox.net" type="application/atom+xml">
   <script src="/javascripts/modernizr-2.0.js"></script>
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
   <script src="/javascripts/octopress.js" type="text/javascript"></script>
   <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
 <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
@@ -38,7 +38,7 @@
 
     (function() {
       var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
       var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
     })();
   </script>
@@ -58,7 +58,12 @@
   
 </ul>
   
-<form action="http://google.com/search" method="get">
+  
+  
+  
+  
+  
+<form action="https://google.com/search" method="get">
   <fieldset role="search">
     <input type="hidden" name="q" value="site:www.jamielennox.net" />
     <input class="search" type="text" name="q" results="0" placeholder="Search"/>
@@ -90,16 +95,10 @@
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2014-05-21T14:54:00+10:00" pubdate data-updated="true">May 21<span>st</span>, 2014</time>
+<time class='entry-date' datetime='2014-05-21T14:54:00+10:00'><span class='date'><span class='date-month'>May</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2014</span></span> <span class='time'>2:54 pm</span></time>
         
-         | <a href="/blog/2014/05/21/identity-uri-in-auth-token-middleware/#disqus_thread">Comments</a>
+           | <a href="/blog/2014/05/21/identity-uri-in-auth-token-middleware/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2014/05/21/identity-uri-in-auth-token-middleware/">Comments</a>
         
       </p>
     
@@ -163,16 +162,10 @@ However we removed httplib a number of releases ago and now simply reconstruct t
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2014-02-24T13:32:00+10:00" pubdate data-updated="true">Feb 24<span>th</span>, 2014</time>
+<time class='entry-date' datetime='2014-02-24T13:32:00+10:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>1:32 pm</span></time>
         
-         | <a href="/blog/2014/02/24/client-session-objects/#disqus_thread">Comments</a>
+           | <a href="/blog/2014/02/24/client-session-objects/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2014/02/24/client-session-objects/">Comments</a>
         
       </p>
     
@@ -341,7 +334,7 @@ However in practice we have standardized on the <a href="http://www.python-reque
 <ul>
 <li>reduce the basic client down to an object consisting of a few variables indicating the service type and version required.</li>
 <li>finally get a common service discovery mechanism for all the clients.</li>
-<li>shift the problem of API version migration onto someone else &ndash; probably me.</li>
+<li>shift the problem of API version migration onto someone else - probably me.</li>
 </ul>
 
 
@@ -377,16 +370,10 @@ In Juno we should have hierarchical regions and then it may make sense to allow 
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2014-02-18T11:08:00+10:00" pubdate data-updated="true">Feb 18<span>th</span>, 2014</time>
+<time class='entry-date' datetime='2014-02-18T11:08:00+10:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>18</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>11:08 am</span></time>
         
-         | <a href="/blog/2014/02/18/dealing-with-pyc/#disqus_thread">Comments</a>
+           | <a href="/blog/2014/02/18/dealing-with-pyc/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc/">Comments</a>
         
       </p>
     
@@ -444,16 +431,10 @@ There are other guides out there but the basic concept is simply to set PYTHONDO
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2013-10-22T11:48:00+10:00" pubdate data-updated="true">Oct 22<span>nd</span>, 2013</time>
+<time class='entry-date' datetime='2013-10-22T11:48:00+10:00'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>22</span><span class='date-suffix'>nd</span>, <span class='date-year'>2013</span></span> <span class='time'>11:48 am</span></time>
         
-         | <a href="/blog/2013/10/22/keystone-token-binding/#disqus_thread">Comments</a>
+           | <a href="/blog/2013/10/22/keystone-token-binding/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2013/10/22/keystone-token-binding/">Comments</a>
         
       </p>
     
@@ -582,16 +563,10 @@ Watch this space however as we add x509 authentication and binding, and improve 
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2013-09-30T13:53:00+10:00" pubdate data-updated="true">Sep 30<span>th</span>, 2013</time>
+<time class='entry-date' datetime='2013-09-30T13:53:00+10:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>30</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>1:53 pm</span></time>
         
-         | <a href="/blog/2013/09/30/keystone-with-httpd-in-devstack/#disqus_thread">Comments</a>
+           | <a href="/blog/2013/09/30/keystone-with-httpd-in-devstack/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack/">Comments</a>
         
       </p>
     
@@ -643,16 +618,10 @@ Simply set:</p>
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2013-09-27T15:27:00+10:00" pubdate data-updated="true">Sep 27<span>th</span>, 2013</time>
+<time class='entry-date' datetime='2013-09-27T15:27:00+10:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>3:27 pm</span></time>
         
-         | <a href="/blog/2013/09/27/apiclient-communications/#disqus_thread">Comments</a>
+           | <a href="/blog/2013/09/27/apiclient-communications/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2013/09/27/apiclient-communications/">Comments</a>
         
       </p>
     
@@ -760,16 +729,10 @@ Much of what is currently on keystoneclient that will be moved is defined public
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2013-04-09T11:50:00+10:00" pubdate data-updated="true">Apr 9<span>th</span>, 2013</time>
+<time class='entry-date' datetime='2013-04-09T11:50:00+10:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>9</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>11:50 am</span></time>
         
-         | <a href="/blog/2013/04/09/user-access-to-libvirtd/#disqus_thread">Comments</a>
+           | <a href="/blog/2013/04/09/user-access-to-libvirtd/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd/">Comments</a>
         
       </p>
     
@@ -821,16 +784,10 @@ Much of what is currently on keystoneclient that will be moved is defined public
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2012-11-11T17:13:00+10:00" pubdate data-updated="true">Nov 11<span>th</span>, 2012</time>
+<time class='entry-date' datetime='2012-11-11T17:13:00+10:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>11</span><span class='date-suffix'>th</span>, <span class='date-year'>2012</span></span> <span class='time'>5:13 pm</span></time>
         
-         | <a href="/blog/2012/11/11/cryptographic-message-syntax/#disqus_thread">Comments</a>
+           | <a href="/blog/2012/11/11/cryptographic-message-syntax/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2012/11/11/cryptographic-message-syntax/">Comments</a>
         
       </p>
     
@@ -1026,7 +983,7 @@ The message itself is not encrypted and can be retrieved, but you cannot assert 
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
     }());
 </script>

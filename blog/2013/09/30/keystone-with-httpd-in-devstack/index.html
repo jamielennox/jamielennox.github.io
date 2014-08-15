@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Keystone with HTTPd in devstack - jamielennox.net</title>
+  <title>Keystone With HTTPd in Devstack - jamielennox.net</title>
   <meta name="author" content="Jamie Lennox">
 
   
@@ -24,7 +24,7 @@
   <link href="/atom.xml" rel="alternate" title="jamielennox.net" type="application/atom+xml">
   <script src="/javascripts/modernizr-2.0.js"></script>
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
   <script src="/javascripts/octopress.js" type="text/javascript"></script>
   <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
 <link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
@@ -38,7 +38,7 @@
 
     (function() {
       var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
       var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
     })();
   </script>
@@ -58,7 +58,12 @@
   
 </ul>
   
-<form action="http://google.com/search" method="get">
+  
+  
+  
+  
+  
+<form action="https://google.com/search" method="get">
   <fieldset role="search">
     <input type="hidden" name="q" value="site:www.jamielennox.net" />
     <input class="search" type="text" name="q" results="0" placeholder="Search"/>
@@ -78,7 +83,9 @@
   
   <header>
     
-      <h1 class="entry-title">Keystone With HTTPd in Devstack</h1>
+      
+        <h1 class="entry-title">Keystone With HTTPd in Devstack</h1>
+      
     
     
       <p class="meta">
@@ -87,16 +94,10 @@
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2013-09-30T13:53:00+10:00" pubdate data-updated="true">Sep 30<span>th</span>, 2013</time>
+<time class='entry-date' datetime='2013-09-30T13:53:00+10:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>30</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>1:53 pm</span></time>
         
-         | <a href="#disqus_thread">Comments</a>
+           | <a href="#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net">Comments</a>
         
       </p>
     
@@ -120,8 +121,8 @@ This leads to a series of hacks to prevent long running crypto commands blocking
 <p>To get some wider adoption and understanding of the process I&rsquo;ve just added Keystone with httpd support into devstack.
 Simply set:</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>APACHE_ENABLED_SERVICES=key</span></code></pre></td></tr></table></div></figure>
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>APACHE_ENABLED_SERVICES=key</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 
 <p>in your localrc or environment variables and re-run <code>./stack.sh</code> to try it out.</p>
@@ -135,21 +136,21 @@ Simply set:</p>
       
   
 
-<span class="byline author vcard">Posted by <span class="fn">Jamie Lennox</span></span>
+
+
+  <span class="byline author vcard">Authored by <span class="fn">
+  
+    Jamie Lennox
+  
+  </span></span>
+
 
       
 
 
 
 
-
-
-
-
-  
-
-
-<time datetime="2013-09-30T13:53:00+10:00" pubdate data-updated="true">Sep 30<span>th</span>, 2013</time>
+<time class='entry-date' datetime='2013-09-30T13:53:00+10:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>30</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>1:53 pm</span></time>
       
 
 <span class="categories">
@@ -216,7 +217,7 @@ Simply set:</p>
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
       (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
     }());
 </script>

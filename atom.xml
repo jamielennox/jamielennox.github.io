@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-06-04T07:18:27+10:00</updated>
+  <updated>2014-08-15T12:58:00+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[identity_uri in Auth Token Middleware]]></title>
+    <title type="html"><![CDATA[Identity_uri in Auth Token Middleware]]></title>
     <link href="http://www.jamielennox.net/blog/2014/05/21/identity-uri-in-auth-token-middleware/"/>
     <updated>2014-05-21T14:54:00+10:00</updated>
     <id>http://www.jamielennox.net/blog/2014/05/21/identity-uri-in-auth-token-middleware</id>
@@ -224,7 +224,7 @@ However in practice we have standardized on the <a href="http://www.python-reque
 <ul>
 <li>reduce the basic client down to an object consisting of a few variables indicating the service type and version required.</li>
 <li>finally get a common service discovery mechanism for all the clients.</li>
-<li>shift the problem of API version migration onto someone else &ndash; probably me.</li>
+<li>shift the problem of API version migration onto someone else - probably me.</li>
 </ul>
 
 
@@ -243,7 +243,7 @@ In Juno we should have hierarchical regions and then it may make sense to allow 
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Dealing with .pyc]]></title>
+    <title type="html"><![CDATA[Dealing With .pyc]]></title>
     <link href="http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc/"/>
     <updated>2014-02-18T11:08:00+10:00</updated>
     <id>http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc</id>
@@ -390,7 +390,7 @@ Watch this space however as we add x509 authentication and binding, and improve 
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Keystone with HTTPd in devstack]]></title>
+    <title type="html"><![CDATA[Keystone With HTTPd in Devstack]]></title>
     <link href="http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack/"/>
     <updated>2013-09-30T13:53:00+10:00</updated>
     <id>http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack</id>
@@ -510,7 +510,7 @@ Much of what is currently on keystoneclient that will be moved is defined public
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[User access to libvirtd]]></title>
+    <title type="html"><![CDATA[User Access to Libvirtd]]></title>
     <link href="http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd/"/>
     <updated>2013-04-09T11:50:00+10:00</updated>
     <id>http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd</id>

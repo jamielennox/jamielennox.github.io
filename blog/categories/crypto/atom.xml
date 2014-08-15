@@ -4,7 +4,7 @@
   <title><![CDATA[Category: crypto | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/crypto/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-06-04T07:18:27+10:00</updated>
+  <updated>2014-08-15T12:58:00+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -38,25 +38,23 @@ The meat of the post is a list of each CMS data type and the most important part
 How to give that key to someone else is outside this message.
 It&rsquo;s defined as:</p>
 
-<p><code>
-EncryptedData ::= SEQUENCE {
+<pre><code>EncryptedData ::= SEQUENCE {
   version CMSVersion,
   encryptedContentInfo EncryptedContentInfo,
   unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }
-</code></p>
+</code></pre>
 
 <h3>DigestedData</h3>
 
 <p>Provides a digest along with the plaintext.
 Typically this is then wrapped by an EnvelopedData or such to provide Integrity to a message.</p>
 
-<p><code>
-DigestedData ::= SEQUENCE {
+<pre><code>DigestedData ::= SEQUENCE {
   version CMSVersion,
   digestAlgorithm DigestAlgorithmIdentifier,
   encapContentInfo EncapsulatedContentInfo,
   digest Digest }
-</code></p>
+</code></pre>
 
 <h3>SignedData</h3>
 
@@ -64,24 +62,24 @@ DigestedData ::= SEQUENCE {
 In the regular signing way, each signer creates a digest of the payload and encrypts it with their private key.
 The message contains the certificate of the signers and can contain a store of certificates and CRLs for cert path validation by the receiver.</p>
 
-<p>```
-SignerInfo ::= SEQUENCE {
+<pre><code>SignerInfo ::= SEQUENCE {
   version CMSVersion,
   sid SignerIdentifier,
   digestAlgorithm DigestAlgorithmIdentifier,
   signedAttrs [0] IMPLICIT SignedAttributes OPTIONAL,
   signatureAlgorithm SignatureAlgorithmIdentifier,
   signature SignatureValue,
-  unsignedAttrs [1] IMPLICIT UnsignedAttributes OPTIONAL }</p>
+  unsignedAttrs [1] IMPLICIT UnsignedAttributes OPTIONAL }
 
-<p>SignedData ::= SEQUENCE {
+
+SignedData ::= SEQUENCE {
   version CMSVersion,
   digestAlgorithms DigestAlgorithmIdentifiers,
   encapContentInfo EncapsulatedContentInfo,
   certificates [0] IMPLICIT CertificateSet OPTIONAL,
   crls [1] IMPLICIT RevocationInfoChoices OPTIONAL,
   signerInfos SignerInfos }
-```</p>
+</code></pre>
 
 <h3>EnvelopedData</h3>
 
@@ -90,21 +88,20 @@ The most common recipients are a certificate (or the private key of), a symmetri
 The payload is encrypted with a symmetric key and then this key is encrypted with the key provided by the recipient (or PBKDF for passwords).
 So on decoding the recipient will decrypt the symmetric key from the RecipientInfo associated with them and then use that to decrypt the plaintext mesage.</p>
 
-<p>```
-EnvelopedData ::= SEQUENCE {
+<pre><code>EnvelopedData ::= SEQUENCE {
   version CMSVersion,
   originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
   recipientInfos RecipientInfos,
   encryptedContentInfo EncryptedContentInfo,
-  unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }</p>
+  unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }
 
-<p>RecipientInfo ::= CHOICE {
+RecipientInfo ::= CHOICE {
   ktri KeyTransRecipientInfo,
   kari [1] KeyAgreeRecipientInfo,
   kekri [2] KEKRecipientInfo,
   pwri [3] PasswordRecipientinfo,
   ori [4] OtherRecipientInfo }
-```</p>
+</code></pre>
 
 <h3>AuthenticatedData</h3>
 
@@ -113,8 +110,7 @@ It generates a new MAC secret key and with it generates a MAC digest for the pla
 It then encrypts the MAC secret key to any number of recipients similar to EnvelopedData and includes the MAC in the message.
 The message itself is not encrypted and can be retrieved, but you cannot assert the message integrity without being one of the explicit recipients.</p>
 
-<p><code>
-AuthenticatedData ::= SEQUENCE {
+<pre><code>AuthenticatedData ::= SEQUENCE {
   version CMSVersion,
   originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
   recipientInfos RecipientInfos,
@@ -124,7 +120,7 @@ AuthenticatedData ::= SEQUENCE {
   authAttrs [2] IMPLICIT AuthAttributes OPTIONAL,
   mac MessageAuthenticationCode,
   unauthAttrs [3] IMPLICIT UnauthAttributes OPTIONAL }
-</code></p>
+</code></pre>
 ]]></content>
   </entry>
   
