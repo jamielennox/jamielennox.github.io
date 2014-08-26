@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-08-15T14:24:44+10:00</updated>
+  <updated>2014-08-26T12:42:10+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,263 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Requests-mock]]></title>
+    <link href="http://www.jamielennox.net/blog/2014/08/26/requests-mock/"/>
+    <updated>2014-08-26T12:26:23+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2014/08/26/requests-mock</id>
+    <content type="html"><![CDATA[<p>Having just release v0.5 of <a href="https://pypi.python.org/pypi/requests-mock">requests-mock</a> and having it used by both keystoneclient and novaclient with others in the works I thought I&rsquo;d finally do a post explaining what it is and how to use it.</p>
+
+<h2>Motivation</h2>
+
+<p>I was the person who brought <a href="http://falcao.it/HTTPretty/">HTTPretty</a> into the OpenStack requirements.</p>
+
+<p>The initial reason for this was that keystoneclient was transitioning from the <a href="https://docs.python.org/2/library/httplib.html">httplib</a> library to <a href="http://docs.python-requests.org/en/latest/">requests</a> and I needed to prove that there was no changes to the HTTP requests during the transition.
+HTTPretty is a way to mock HTTP responses at the socket level, so it is not dependant on the HTTP library you use and for this it was fairly successful.</p>
+
+<p>As part of that transition I converted all the unit tests so that they actually traversed through to the requesting layer and found a number of edge case bugs because the responses were being mocked out above this point.
+I have therefore advocated that the clients convert to mocking at the request layer rather than stubbing out returned values.
+I&rsquo;m pretty sure that this doesn&rsquo;t adhere strictly to the unit testing philosophy of testing small isolated changes, but our client libraries aren&rsquo;t that deep and I&rsquo;d honestly prefer to just test the whole way through and find those edge cases.</p>
+
+<p>Having done this has made it remarkably easier to transition to using sessions in the clients as well, because we are testing the whole path down to making HTTP requests for all the resource tests so again have assurances that the HTTP requests being sent are equivalent.</p>
+
+<p>At the same time we&rsquo;ve had a number of problems with HTTPretty:</p>
+
+<ul>
+<li>It was the lingering last requirement for getting Python 3 support. Thanks to Cyril Roelandt for finally getting that fixed.</li>
+<li>For various reasons it is difficult for the distributions to package.</li>
+<li>It has a bad habit of doing backwards incompatible, or simply broken releases. The current requirements string is: <code>httpretty&gt;=0.8.0,!=0.8.1,!=0.8.2,!=0.8.3</code></li>
+<li>Because it acts at the socket layer it doesn&rsquo;t always play nicely with other things using the socket. For example it has to be disabled for live memcache tests.</li>
+<li>It pins its requirements on pypi.</li>
+</ul>
+
+
+<p>Now I feel like I&rsquo;m just ranting.
+There are additional oddities I found in trying to fix these upstream but this is not about bashing HTTPretty.</p>
+
+<h2>requests-mock</h2>
+
+<p>requests-mock follows the same concepts allowing users to stub out responses to HTTP requests, however it specifically targets the requests library rather than stubbing the socket.
+All the OpenStack clients have been converted to requests at this point, and for the general audience if you are writing HTTP code in Python you should be using requests.</p>
+
+<p>Note: a lot of what is used in these examples is only available since the 0.5 release.
+The current OpenStack requirements still have 0.4 so you&rsquo;ll need to wait for some of the new syntax.</p>
+
+<p>The intention of requests-mock is to work in as similar way to requests itself as possible.
+Hence all the variable names and conventions should be as close to a <code>requests.Response</code> as possible.
+For example:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">requests</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">requests_mock</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">url</span> <span class="o">=</span> <span class="s">&#39;http://www.google.com&#39;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">requests_mock</span><span class="o">.</span><span class="n">mock</span><span class="p">()</span> <span class="k">as</span> <span class="n">m</span><span class="p">:</span>
+</span><span class='line'><span class="o">...</span>     <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s">&#39;Not really google&#39;</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="mi">218</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>     <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">text</span>
+</span><span class='line'><span class="s">u&#39;Not really google&#39;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span>
+</span><span class='line'><span class="mi">218</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So <code>text</code> in the mock equates to <code>text</code> in the response and similarly for <code>status_code</code>.
+Some more advanced usage of the requests library:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">requests_mock</span><span class="o">.</span><span class="n">mock</span><span class="p">()</span> <span class="k">as</span> <span class="n">m</span><span class="p">:</span>
+</span><span class='line'><span class="o">...</span>     <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;hello&#39;</span><span class="p">:</span> <span class="s">&#39;world&#39;</span><span class="p">},</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;test&#39;</span><span class="p">:</span> <span class="s">&#39;header&#39;</span><span class="p">})</span>
+</span><span class='line'><span class="o">...</span>     <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">text</span>
+</span><span class='line'><span class="s">u&#39;{&quot;hello&quot;: &quot;world&quot;}&#39;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span><span class="s">u&#39;hello&#39;</span><span class="p">:</span> <span class="s">u&#39;world&#39;</span><span class="p">}</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span>
+</span><span class='line'><span class="mi">200</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">headers</span>
+</span><span class='line'><span class="p">{</span><span class="s">&#39;test&#39;</span><span class="p">:</span> <span class="s">&#39;header&#39;</span><span class="p">}</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;test&#39;</span><span class="p">]</span>
+</span><span class='line'><span class="s">&#39;header&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can also use callbacks to create responses dynamically:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">_request_callback</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+</span><span class='line'><span class="o">...</span>     <span class="n">context</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="mi">201</span>
+</span><span class='line'><span class="o">...</span>     <span class="n">context</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;header&#39;</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">return</span> <span class="p">{</span><span class="s">&#39;request&#39;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">}</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">requests_mock</span><span class="o">.</span><span class="n">mock</span><span class="p">()</span> <span class="k">as</span> <span class="n">m</span><span class="p">:</span>
+</span><span class='line'><span class="o">...</span>     <span class="n">m</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">_request_callback</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>     <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s">&#39;data&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span>
+</span><span class='line'><span class="mi">201</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">headers</span>
+</span><span class='line'><span class="p">{</span><span class="s">&#39;test&#39;</span><span class="p">:</span> <span class="s">&#39;header&#39;</span><span class="p">}</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span><span class="s">u&#39;request&#39;</span><span class="p">:</span> <span class="s">u&#39;data&#39;</span><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that because the callback was passed as the <code>json</code> parameter the return type is expected to be the same as if you had passed it as a predefined <code>json=blob</code> value.
+If you wanted to return <code>text</code> the callback would be on the <code>text</code> parameter.</p>
+
+<h2>Cool tricks</h2>
+
+<p>So rather than give a lot of examples i&rsquo;ll just highlight some of the interesting things you can do with the library and how to do it.</p>
+
+<ul>
+<li>Queue mutliple responses for a url, each element of the list is interpreted as if they were <code>**kwargs</code> for a response.
+In this case every request other than the first will get a 401 error:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="p">[{</span><span class="s">&#39;json&#39;</span><span class="p">:</span> <span class="n">_request_callback</span><span class="p">},</span>
+</span><span class='line'>            <span class="p">{</span><span class="s">&#39;text&#39;</span><span class="p">:</span> <span class="s">&#39;Not Allowed&#39;</span><span class="p">,</span> <span class="s">&#39;status_code&#39;</span><span class="p">:</span> <span class="mi">401</span><span class="p">}])</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>See the history of requests:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">request_history</span>  <span class="c"># all requests</span>
+</span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">last_request</span>  <span class="c"># the last request</span>
+</span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">call_count</span>  <span class="c"># number of requests</span>
+</span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">called</span>  <span class="c"># boolean, True if called</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>match on the only the URL path:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/path/only&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>match on any method:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>or match on any URL:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>match on headers that are part of the request (useful for distinguishing between multiple requests to the same URL):</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">request_headers</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;X-Auth-Token&#39;</span><span class="p">:</span> <span class="s">&#39;XXXXX&#39;</span><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>be used as a function decorator</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="nd">@requests_mock.mock</span><span class="p">()</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">test_a_thing</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+</span><span class='line'>   <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s">&#39;resp&#39;</span><span class="p">)</span>
+</span><span class='line'>   <span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Try it!</h2>
+
+<p>There is a lot more it can do and if you want to know more you can check out:</p>
+
+<ul>
+<li><a href="http://requests-mock.readthedocs.org/">Read the Docs</a></li>
+<li><a href="https://pypi.python.org/pypi/requests-mock">PyPi</a></li>
+<li><a href="https://git.openstack.org/cgit/stackforge/requests-mock">git repository</a></li>
+</ul>
+
+
+<p>As a final selling point because it was built particularly around OpenStack needs it is:</p>
+
+<ul>
+<li>Easily integrated with the <a href="https://pypi.python.org/pypi/fixtures">fixtures</a> library.</li>
+<li>Hosted on stackforge and reviewed via <a href="https://review.openstack.org/#/q/project:stackforge/requests-mock+is:open,n,z">Gerrit</a>.</li>
+<li>Continuously tested against at least keystoneclient and novaclient to prevent backwards incompatible changes.</li>
+<li>Accepted as part of OpenStack requirements.</li>
+</ul>
+
+
+<p>Patches and <a href="https://bugs.launchpad.net/requests-mock">bug reports</a> are welcome.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Git Commands for Messy People]]></title>
