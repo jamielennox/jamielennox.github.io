@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://www.jamielennox.net/blog/2014/09/15/how-to-use-keystoneclient-sessions/</loc>
+    <lastmod>2014-09-15T09:13:36+10:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://www.jamielennox.net/blog/2014/08/26/requests-mock/</loc>
     <lastmod>2014-08-26T12:26:23+10:00</lastmod>
     <priority>0.8</priority>
@@ -65,28 +71,28 @@
   
   <url>
     <loc>http://www.jamielennox.net/blog/</loc>
-    <lastmod>2014-08-26T12:42:10+10:00</lastmod>
+    <lastmod>2014-09-15T12:36:21+10:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://www.jamielennox.net/blog/archives/</loc>
-    <lastmod>2014-08-26T12:42:10+10:00</lastmod>
+    <lastmod>2014-09-15T12:36:21+10:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://www.jamielennox.net/</loc>
-    <lastmod>2014-08-26T12:42:10+10:00</lastmod>
+    <lastmod>2014-09-15T12:36:21+10:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   
   <url>
     <loc>http://www.jamielennox.net/archives/</loc>
-    <lastmod>2014-08-26T12:42:10+10:00</lastmod>
+    <lastmod>2014-09-15T12:36:21+10:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

@@ -9,7 +9,7 @@
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="Having just release v0.5 of requests-mock and having it used by both keystoneclient and novaclient with others in the works I thought I&rsquo;d &hellip;">
+  <meta name="description" content="In the last post I did on keystoneclient sessions there was a lot of hand waving about how they should work but it&rsquo;s not merged yet. &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -80,6 +80,290 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/15/how-to-use-keystoneclient-sessions/">How to Use Keystoneclient Sessions</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-09-15T09:13:36+10:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>15</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>9:13 am</span></time>
+        
+           | <a href="/blog/2014/09/15/how-to-use-keystoneclient-sessions/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2014/09/15/how-to-use-keystoneclient-sessions/">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In the last post I did on keystoneclient sessions there was a lot of hand waving about how they should work but it&rsquo;s not merged yet.
+Standardizing clients has received some more attention again recently - and now that the sessions are more mature and ready it seems like a good opportunity to explain them and how to use them again.</p>
+
+<p>For those of you new to this area the clients have grown very organically, generally forking off some existing client and adding and removing features in ways that worked for that project.
+Whilst this is in general a problem for user experience (try to get one token and use it with multiple clients without reauthenticating) it is a nightmare for security fixes and new features as they need to be applied individually across each client.</p>
+
+<p>Sessions are an attempt to extract a common authentication and communication layer from the existing clients so that we can handle transport security once, and keystone and deployments can add new authentication mechanisms without having to do it for every client.</p>
+
+<h2>The Basics</h2>
+
+<p>Sessions and authentications are user facing objects that you create and pass to a client, they are public objects not a framework for the existing clients.
+They require a change in how you instantiate clients.</p>
+
+<p>The first step is to create an authentication plugin, currently the available plugins are:</p>
+
+<ul>
+<li><code>keystoneclient.auth.identity.v2.Password</code></li>
+<li><code>keystoneclient.auth.identity.v2.Token</code></li>
+<li><code>keystoneclient.auth.identity.v3.Password</code></li>
+<li><code>keystoneclient.auth.identity.v3.Token</code></li>
+<li><code>keystoneclient.auth.token_endpoint.Token</code></li>
+</ul>
+
+
+<p>For the primary user/password and token authentication mechanisms that keystone supports in v2 and v3 and for the test case where you know the endpoint and token in advance.
+The parameters will vary depending upon what is required to authenticate with each.</p>
+
+<p>Plugins don&rsquo;t need to live in the keystoneclient, we are currently in the process of setting up a new repository for kerberos authentication so that it will be an optional dependency.
+There are also some plugins living in the contrib section of keystoneclient for federation that will also likely be moved to a new repository soon.</p>
+
+<p>You can then create a session with that plugin.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">keystoneclient</span> <span class="kn">import</span> <span class="n">session</span> <span class="k">as</span> <span class="n">ksc_session</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystoneclient.auth.identity</span> <span class="kn">import</span> <span class="n">v3</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystoneclient.v3</span> <span class="kn">import</span> <span class="n">client</span> <span class="k">as</span> <span class="n">keystone_v3</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">novaclient.v1_1</span> <span class="kn">import</span> <span class="n">client</span> <span class="k">as</span> <span class="n">nova_v2</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">auth</span> <span class="o">=</span> <span class="n">v3</span><span class="o">.</span><span class="n">Password</span><span class="p">(</span><span class="n">auth_url</span><span class="o">=</span><span class="s">&#39;http://keystone.host/v3&#39;</span><span class="p">,</span>
+</span><span class='line'>                   <span class="n">username</span><span class="o">=</span><span class="s">&#39;user&#39;</span><span class="p">,</span>
+</span><span class='line'>                   <span class="n">password</span><span class="o">=</span><span class="s">&#39;password&#39;</span><span class="p">,</span>
+</span><span class='line'>                   <span class="n">project_name</span><span class="o">=</span><span class="s">&#39;demo&#39;</span><span class="p">,</span>
+</span><span class='line'>                   <span class="n">user_domain_name</span><span class="o">=</span><span class="s">&#39;default&#39;</span><span class="p">,</span>
+</span><span class='line'>                   <span class="n">project_domain_name</span><span class="o">=</span><span class="s">&#39;default&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">session</span> <span class="o">=</span> <span class="n">ksc_session</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">,</span>
+</span><span class='line'>                              <span class="n">verify</span><span class="o">=</span><span class="s">&#39;/path/to/ca.cert&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">keystone</span> <span class="o">=</span> <span class="n">keystone_v3</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+</span><span class='line'><span class="n">nova</span> <span class="o">=</span> <span class="n">nova_v2</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Keystone and nova clients will now share an authentication token fetched with keystone&rsquo;s v3 authentication.
+The clients will authenticate on the first request and will re-authenticate automatically when the token expires.</p>
+
+<p>This is a fundamental shift from the existing clients that would authenticate internally to the client and on creation so by opting to use sessions you are acknowledging that some methods won&rsquo;t work like they used to.
+For example keystoneclient had an <code>authenticate()</code> function that would save the details of the authentication (user_id etc) on the client object.
+This process is no longer controlled by keystoneclient and so this function should not be used, however it also cannot be removed because we need to remain backwards compatible with existing client code.</p>
+
+<p>In converting the existing clients we consider that passing a Session means that you are acknowledging that you are using new code and are opting-in to the new behaviour.
+This will not affect 90% of users who just make calls to the APIs, however if you have got hacks in place to share tokens between the existing clients or you overwrite variables on the clients to force different behaviours then these will probably be broken.</p>
+
+<h2>Per-Client Authentication</h2>
+
+<p>The above flow is useful for users where they want to have there one token shared between one or more clients.
+If you are are an application that uses many authentication plugins (eg, heat or horizon) you may want to take advantage of using a single session&rsquo;s connection pooling or caching whilst juggling multiple authentications.
+You can therefore create a session without an authentication plugin and specify the plugin that will be used with that client instance, for example:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">global</span> <span class="n">SESSION</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="ow">not</span> <span class="n">SESSION</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">SESSION</span> <span class="o">=</span> <span class="n">ksc_session</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">auth</span> <span class="o">=</span> <span class="n">get_auth_plugin</span><span class="p">()</span>  <span class="c"># you could deserialize it from a db,</span>
+</span><span class='line'>                          <span class="c"># fetch it based on a cookie value...</span>
+</span><span class='line'><span class="n">keystone</span> <span class="o">=</span> <span class="n">keystone_v3</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">SESSION</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Auth plugins set on the client will override any auth plugin set on the session - but I&rsquo;d recommend you pick one method based on your application&rsquo;s needs and stick with it.</p>
+
+<h2>Loading from a config file</h2>
+
+<p>There is support for loading session and authentication plugins from and oslo.config CONF object.
+The documentation on exactly what options are supported is lacking right now and you will probably need to look at code to figure out everything that is supported.
+I promise to improve this, but to get you started you need to register the options globally:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">group</span> <span class="o">=</span> <span class="s">&#39;keystoneclient&#39;</span>  <span class="c"># the option group</span>
+</span><span class='line'><span class="n">keystoneclient</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">register_conf_options</span><span class="p">(</span><span class="n">CONF</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
+</span><span class='line'><span class="n">keystoneclient</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">register_conf_options</span><span class="p">(</span><span class="n">CONF</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And then load the objects where you need them:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">auth</span> <span class="o">=</span> <span class="n">keystoneclient</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">load_from_conf_options</span><span class="p">(</span><span class="n">CONF</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
+</span><span class='line'><span class="n">session</span> <span class="o">=</span> <span class="n">ksc_session</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">load_from_conf_options</span><span class="p">(</span><span class="n">CONF</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
+</span><span class='line'><span class="n">keystone</span> <span class="o">=</span> <span class="n">keystone_v3</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Will load options that look like:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ini'><span class='line'><span class="k">[keystoneclient]</span>
+</span><span class='line'><span class="na">cacert</span> <span class="o">=</span> <span class="s">/path/to/ca.cert</span>
+</span><span class='line'><span class="na">auth_plugin</span> <span class="o">=</span> <span class="s">v3password</span>
+</span><span class='line'><span class="na">username</span> <span class="o">=</span> <span class="s">user</span>
+</span><span class='line'><span class="na">password</span> <span class="o">=</span> <span class="s">password</span>
+</span><span class='line'><span class="na">project_name</span> <span class="o">=</span> <span class="s">demo</span>
+</span><span class='line'><span class="na">project_domain_name</span> <span class="o">=</span> <span class="s">default</span>
+</span><span class='line'><span class="na">user_domain_name</span> <span class="o">=</span> <span class="s">default</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>There is also support for transitioning existing code bases to new option names if they are not the same as what your application uses.</p>
+
+<h2>Loading from CLI</h2>
+
+<p>A very similar process is used to load sessions and plugins from an argparse parser.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="s">&#39;test&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">argv</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">keystoneclient</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">register_cli_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+</span><span class='line'><span class="n">keystoneclient</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">register_argparse_arguments</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">argv</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">auth</span> <span class="o">=</span> <span class="n">keystoneclient</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">load_from_argparse_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'><span class="n">session</span> <span class="o">=</span> <span class="n">keystoneclient</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">load_from_cli_options</span><span class="p">(</span><span class="n">args</span><span class="p">,</span>
+</span><span class='line'>                                                               <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This produces an application with the following options:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>python test.py --os-auth-plugin v3password
+</span><span class='line'>usage: <span class="nb">test</span> <span class="o">[</span>-h<span class="o">]</span> <span class="o">[</span>--insecure<span class="o">]</span> <span class="o">[</span>--os-cacert &lt;ca-certificate&gt;<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-cert &lt;certificate&gt;<span class="o">]</span> <span class="o">[</span>--os-key &lt;key&gt;<span class="o">]</span> <span class="o">[</span>--timeout &lt;seconds&gt;<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-auth-plugin &lt;name&gt;<span class="o">]</span> <span class="o">[</span>--os-auth-url OS_AUTH_URL<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-domain-id OS_DOMAIN_ID<span class="o">]</span> <span class="o">[</span>--os-domain-name OS_DOMAIN_NAME<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-project-id OS_PROJECT_ID<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-project-name OS_PROJECT_NAME<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-project-domain-id OS_PROJECT_DOMAIN_ID<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-project-domain-name OS_PROJECT_DOMAIN_NAME<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-trust-id OS_TRUST_ID<span class="o">]</span> <span class="o">[</span>--os-user-id OS_USER_ID<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-user-name OS_USERNAME<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-user-domain-id OS_USER_DOMAIN_ID<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-user-domain-name OS_USER_DOMAIN_NAME<span class="o">]</span>
+</span><span class='line'>            <span class="o">[</span>--os-password OS_PASSWORD<span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>There is an ongoing effort to create a standardized CLI plugin that can be used by new clients rather than have people provide an &ndash;os-auth-plugin every time.
+It is not yet ready, however clients can create and specify there own default plugins if &ndash;os-auth-plugin is not provided.</p>
+
+<h2>For Client Authors</h2>
+
+<p>To make use of the session in your client there is the <code>keystoneclient.adapter.Adapter</code> which provides you with a set of standard variables that your client should take and use with the session.
+The adapter will handle the per-client authentication plugins, handle <code>region_name</code>, <code>interface</code>, <code>user_agent</code> and similar client parameters that are not part of the more global (across many clients) state that sessions hold.</p>
+
+<p>The basic client should look like:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>class MyClient<span class="o">(</span>object<span class="o">)</span>:
+</span><span class='line'>
+</span><span class='line'>    def __init__<span class="o">(</span>self, **kwargs<span class="o">)</span>:
+</span><span class='line'>        kwargs.set_default<span class="o">(</span><span class="s1">&#39;user_agent&#39;</span>, <span class="s1">&#39;python-myclient&#39;</span><span class="o">)</span>
+</span><span class='line'>        kwargs.set_default<span class="o">(</span><span class="s1">&#39;service_type&#39;</span>, <span class="s1">&#39;my&#39;</span><span class="o">)</span>
+</span><span class='line'>        self.http <span class="o">=</span> keystoneclient.adapter.Adapter<span class="o">(</span>**kwargs<span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The adapter then has <code>.get()</code> and <code>.post()</code> and other http methods that the clients expect.</p>
+
+<h2>Conclusion</h2>
+
+<p>It&rsquo;s great to have renewed interest in standardizing client behaviour, and I&rsquo;m thrilled to see better session adoption.
+The code has matured to the point it is usable and simplifies use for both users and client authors.</p>
+
+<p>In writing this I kept wanting to link out to official documentation and realized just how lacking it really is.
+Some explanation is available on the <a href="http://docs.openstack.org/developer/python-keystoneclient/using-sessions.html">official python-keystoneclient docs pages</a>, there is also <a href="http://docs.openstack.org/developer/python-keystoneclient/api/keystoneclient.auth.identity.html">module documentation</a> however this is definetly an area in which we (read I) am a long way behind.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1145,190 +1429,9 @@ Much of what is currently on keystoneclient that will be moved is defined public
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/11/11/cryptographic-message-syntax/">Cryptographic Message Syntax</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2012-11-11T17:13:00+10:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>11</span><span class='date-suffix'>th</span>, <span class='date-year'>2012</span></span> <span class='time'>5:13 pm</span></time>
-        
-           | <a href="/blog/2012/11/11/cryptographic-message-syntax/#disqus_thread"
-             data-disqus-identifier="http://www.jamielennox.net/blog/2012/11/11/cryptographic-message-syntax/">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>CMS is the <a href="http://en.wikipedia.org/wiki/IETF">IETF</a>&rsquo;s standardized approach to cryptographically secure messages.
-It provides a BER encoded, ASN1 defined means of communicating the parameters and data of a message between recipients.</p>
-
-<p>The most recent definitions come from <a href="http://tools.ietf.org/html/rfc5652">RFC 5652</a> and it does do a good job of explaining how each operation works and what is required, it even provides some usage examples.
-What is missing is a simple rundown of the different types of messages that goes into more detail than <a href="http://en.wikipedia.org/wiki/Cryptographic_Message_Syntax">Wikipedia</a> but doesn&rsquo;t have you jumping straight into the RFC.</p>
-
-<p>Data section should be thought of as a way of using a cryptographic function rather than a message all on its own.
-Correlations will become obvious but EncryptedData is simply a way of portraying symmetrically encrypted data and AuthenticatedData is essentially a way of addressing and sending a MAC.
-As with using normal crypto functions you will often need a combination to provide the required security and so CMS messages are designed to contain nested data sections.
-A common example is a Signed data wrapping an Enveloped data to provide confidentiality and authenticity, or an Enveloped Digest message for confidentiality and integrity.</p>
-
-<p>I realize this is by no means a comprehensive rundown but it should frame the situation and give an overview before you get to the RFC.
-The meat of the post is a list of each CMS data type and the most important parts of the ASN1 definition as it should allow you to figure out how each segment is used and the chain of data you will want in your message.</p>
-
-<h3>EncryptedData</h3>
-
-<p>The most simple CMS message just takes a symmetric key and encrypt some data.
-How to give that key to someone else is outside this message.
-It&rsquo;s defined as:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>EncryptedData ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  encryptedContentInfo EncryptedContentInfo,
-</span><span class='line'>  unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>DigestedData</h3>
-
-<p>Provides a digest along with the plaintext.
-Typically this is then wrapped by an EnvelopedData or such to provide Integrity to a message.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>DigestedData ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  digestAlgorithm DigestAlgorithmIdentifier,
-</span><span class='line'>  encapContentInfo EncapsulatedContentInfo,
-</span><span class='line'>  digest Digest }</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>SignedData</h3>
-
-<p>SignedData messages allow any number of certificates to sign a payload.
-In the regular signing way, each signer creates a digest of the payload and encrypts it with their private key.
-The message contains the certificate of the signers and can contain a store of certificates and CRLs for cert path validation by the receiver.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>SignerInfo ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  sid SignerIdentifier,
-</span><span class='line'>  digestAlgorithm DigestAlgorithmIdentifier,
-</span><span class='line'>  signedAttrs [0] IMPLICIT SignedAttributes OPTIONAL,
-</span><span class='line'>  signatureAlgorithm SignatureAlgorithmIdentifier,
-</span><span class='line'>  signature SignatureValue,
-</span><span class='line'>  unsignedAttrs [1] IMPLICIT UnsignedAttributes OPTIONAL }
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>SignedData ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  digestAlgorithms DigestAlgorithmIdentifiers,
-</span><span class='line'>  encapContentInfo EncapsulatedContentInfo,
-</span><span class='line'>  certificates [0] IMPLICIT CertificateSet OPTIONAL,
-</span><span class='line'>  crls [1] IMPLICIT RevocationInfoChoices OPTIONAL,
-</span><span class='line'>  signerInfos SignerInfos }</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>EnvelopedData</h3>
-
-<p>EnvelopedData allows you to address encrypted data to any number of specific recipients.
-The most common recipients are a certificate (or the private key of), a symmetric key or a password.
-The payload is encrypted with a symmetric key and then this key is encrypted with the key provided by the recipient (or PBKDF for passwords).
-So on decoding the recipient will decrypt the symmetric key from the RecipientInfo associated with them and then use that to decrypt the plaintext mesage.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>EnvelopedData ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
-</span><span class='line'>  recipientInfos RecipientInfos,
-</span><span class='line'>  encryptedContentInfo EncryptedContentInfo,
-</span><span class='line'>  unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }
-</span><span class='line'>
-</span><span class='line'>RecipientInfo ::= CHOICE {
-</span><span class='line'>  ktri KeyTransRecipientInfo,
-</span><span class='line'>  kari [1] KeyAgreeRecipientInfo,
-</span><span class='line'>  kekri [2] KEKRecipientInfo,
-</span><span class='line'>  pwri [3] PasswordRecipientinfo,
-</span><span class='line'>  ori [4] OtherRecipientInfo }</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>AuthenticatedData</h3>
-
-<p>AuthenticatedData is the one that always trips me up, it allows you to send a message that is only verifiable by a number of specific recipients.
-It generates a new MAC secret key and with it generates a MAC digest for the plaintext.
-It then encrypts the MAC secret key to any number of recipients similar to EnvelopedData and includes the MAC in the message.
-The message itself is not encrypted and can be retrieved, but you cannot assert the message integrity without being one of the explicit recipients.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>AuthenticatedData ::= SEQUENCE {
-</span><span class='line'>  version CMSVersion,
-</span><span class='line'>  originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
-</span><span class='line'>  recipientInfos RecipientInfos,
-</span><span class='line'>  macAlgorithm MessageAuthenticationCodeAlgorithm,
-</span><span class='line'>  digestAlgorithm [1] DigestAlgorithmIdentifier OPTIONAL,
-</span><span class='line'>  encapContentInfo EncapsulatedContentInfo,
-</span><span class='line'>  authAttrs [2] IMPLICIT AuthAttributes OPTIONAL,
-</span><span class='line'>  mac MessageAuthenticationCode,
-</span><span class='line'>  unauthAttrs [3] IMPLICIT UnauthAttributes OPTIONAL }</span></code></pre></td></tr></table></div></figure>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="/posts/2">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
