@@ -63,6 +63,8 @@ titlecase: true       # Converts page and post titles to titlecase
 
 sidebar: collapse
 
+history: https://github.com/jamielennox/jamielennox.github.io/commits/source/source
+
 # ----------------------- #
 #   3rd Party Settings    #
 # ----------------------- #
