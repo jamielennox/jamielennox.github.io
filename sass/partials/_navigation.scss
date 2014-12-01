@@ -9,10 +9,9 @@ body > nav {
   padding-left: 5px;
   padding-right: 5px;
   form {
+    padding-top: .05em;
     @include background-clip(padding-box);
-    margin: 0; padding: 0;
     .search {
-      padding: .3em .5em 0;
       font-size: .85em;
       font-family: $sans;
       line-height: 1.1em;
@@ -22,7 +21,7 @@ body > nav {
       @include box-shadow(lighten($nav-bg, 2) 0 1px);
       border: 1px solid $nav-border;
       background-color: $nav-border-top;
-      border-radius: 0.2em 0.2em 0.2em 0.2em;
+      border-radius: 0.4em 0em 0em 0.4em;
       box-shadow: none;
       border: 0px;
       padding-top: 0.3em;
@@ -30,9 +29,8 @@ body > nav {
       padding-left: 0.5em;
       padding-right: 0.5em;
       &:focus {
-        color: #444;
-        border-color: #80b1df;
-        @include box-shadow(#80b1df 0 0 4px, #80b1df 0 0 3px inset);
+        border-color: $link-color-hover;
+        @include box-shadow($link-color-hover 0 0 4px, $link-color-hover 0 0 3px inset);
         background-color: #fff;
         outline: none;
       }
@@ -44,14 +42,21 @@ body > nav {
   }
   ul { display: none; }
   @media only screen and (min-width: 550px) {
-    font-size: .9em;
+    font-size: 0.95em;
     ul {
       @include horizontal-list(0);
       float: left;
       display: block;
-      padding-top: .15em;
+      padding-top: .1em;
     }
     ul.subscription {
+      margin-left: .8em;
+      float: right;
+      li:last-child a { padding-right: 0; }
+    }
+    ul.subscribe {
+      margin-top: -.2em;
+      margin-bottom: -.27em;
       margin-left: .8em;
       float: right;
       li:last-child a { padding-right: 0; }
@@ -106,16 +111,20 @@ body > nav {
 }
 .no-placeholder {
   body > nav .search {
-    background: lighten($nav-bg, 15) image-url('search.png') .3em .25em no-repeat;
     text-indent: 1.3em;
   }
 }
-@mixin whitespace-subscription-button($feed){
+@mixin whitespace-subscription-button($feed, $feed-retina: ''){
   position: relative; top: 0px;
   text-indent: -999999em;
   border: 0;
   padding: 0;
-  &,&:after { @include mask-image($feed); }
+  &,&:after {
+    @include mask-image($feed);
+    @if $feed-retina != '' {
+      @include mask-image-retina($feed-retina, image-width($feed), image-height($feed));
+    }
+  }
   &:after {
     content: "";
     position: absolute; top: 0; left: 0;
@@ -151,12 +160,13 @@ body > nav {
     }
   }
   ul.subscription { position: relative; top: .2em; li, a { border: 0; padding: 0; }}
-  a[rel=subscribe-bitbucket]{ @include whitespace-subscription-button('bitbucket_22_gray.png'); }
-  a[rel=subscribe-github]{ @include whitespace-subscription-button('github_22_gray.png'); }
-  a[rel=subscribe-delicious]{ @include whitespace-subscription-button('delicious_22_gray.png'); }
-  a[rel=subscribe-pinboard]{ @include whitespace-subscription-button('pinboard_22_gray.png'); }
-  a[rel=publisher]{ @include whitespace-subscription-button('gprofile_22_gray.png'); }
-  a[rel=subscribe-rss]{ @include mask-subscription-nav('rss.png'); }
+  a[rel=subscribe-bitbucket]{ @include whitespace-subscription-button('bitbucket_22_gray.png', 'bitbucket_44_gray.png'); }
+  a[rel=subscribe-pinboard]{ @include whitespace-subscription-button('pinboard_22_gray.png', 'pinboard_44_gray.png'); }
   a[rel=subscribe-email]{ @include mask-subscription-nav('email.png'); }
 }
+
+  svg .social { fill: darken($nav-border-top, 20); 
+      transition:.3s;
+      }
+  svg:hover .social { fill: darken($nav-border-top, 7); }
 
