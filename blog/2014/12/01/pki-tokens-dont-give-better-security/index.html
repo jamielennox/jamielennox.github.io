@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: Keystone - jamielennox.net</title>
+  <title>PKI Tokens Don't Give Better Security - jamielennox.net</title>
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="Category: keystone">
+  <meta name="description" content="This will be real quick. Every now and then I come across something that mentions how you should use PKI tokens in keystone as the cryptography gives &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://www.jamielennox.net/blog/categories/keystone">
+  <link rel="canonical" href="http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="jamielennox.net" type="application/atom+xml">
@@ -79,109 +79,110 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: Keystone</h1>
+    
+      
+        <h1 class="entry-title">PKI Tokens Don't Give Better Security</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-12-01T12:55:29+10:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>1</span><span class='date-suffix'>st</span>, <span class='date-year'>2014</span></span> <span class='time'>12:55 pm</span></time>
+        
+           | <a href="#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net">Comments</a>
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>This will be real quick.</p>
 
-  
-  <h2>2014</h2>
+<p>Every now and then I come across something that mentions how you should use PKI tokens in keystone as the cryptography gives it better security.
+It happened today and so I thought I should clarify:</p>
 
-<article>
-  
-<h1><a href="/blog/2014/12/01/pki-tokens-dont-give-better-security/">PKI Tokens Don&#8217;t Give Better Security</a></h1>
-<time datetime="2014-12-01T12:55:29+10:00" pubdate><span class='month'>Dec</span> <span class='day'>01</span> <span class='year'>2014</span></time>
+<p><strong>There is no added security benefit to using keystone with PKI tokens over UUID tokens.</strong></p>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/keystone/'>keystone</a>, <a class='category' href='/blog/categories/openstack/'>openstack</a></span>
-</footer>
+<p>There are advantages to PKI tokens:</p>
 
-
-</article>
+<ul>
+<li>Token validation without a request to keystone means less impact on keystone.</li>
+</ul>
 
 
+<p>And there are disadvantages:</p>
 
-<article>
-  
-<h1><a href="/blog/2014/09/15/how-to-use-keystoneclient-sessions/">How to Use Keystoneclient Sessions</a></h1>
-<time datetime="2014-09-15T09:13:36+10:00" pubdate><span class='month'>Sep</span> <span class='day'>15</span> <span class='year'>2014</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/keystone/'>keystone</a>, <a class='category' href='/blog/categories/openstack/'>openstack</a></span>
-</footer>
+<ul>
+<li>Larger token size.</li>
+<li>Additional complexity to set up.</li>
+</ul>
 
 
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2014/05/21/identity-uri-in-auth-token-middleware/">Identity_uri in Auth Token Middleware</a></h1>
-<time datetime="2014-05-21T14:54:00+10:00" pubdate><span class='month'>May</span> <span class='day'>21</span> <span class='year'>2014</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/keystone/'>keystone</a>, <a class='category' href='/blog/categories/openstack/'>openstack</a></span>
-</footer>
-
-
-</article>
-
-
-
-  
-  <h2>2013</h2>
-
-<article>
-  
-<h1><a href="/blog/2013/10/22/keystone-token-binding/">Keystone Token Binding</a></h1>
-<time datetime="2013-10-22T11:48:00+10:00" pubdate><span class='month'>Oct</span> <span class='day'>22</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/keystone/'>keystone</a>, <a class='category' href='/blog/categories/openstack/'>openstack</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/09/30/keystone-with-httpd-in-devstack/">Keystone With HTTPd in Devstack</a></h1>
-<time datetime="2013-09-30T13:53:00+10:00" pubdate><span class='month'>Sep</span> <span class='day'>30</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/devstack/'>devstack</a>, <a class='category' href='/blog/categories/keystone/'>keystone</a>, <a class='category' href='/blog/categories/openstack/'>openstack</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/09/27/apiclient-communications/">APIClient Communications</a></h1>
-<time datetime="2013-09-27T15:27:00+10:00" pubdate><span class='month'>Sep</span> <span class='day'>27</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/keystone/'>keystone</a>, <a class='category' href='/blog/categories/openstack/'>openstack</a></span>
-</footer>
-
-
-</article>
-
+<p>However the fundamental model, that this opaque chunk of data in the &lsquo;X-Auth-Token&rsquo; header indicates that this request is authenticated does not change between PKI and UUID tokens.
+If someone steals your PKI token you are just as screwed as if they stole your UUID token.</p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+
+
+  <span class="byline author vcard">Authored by <span class="fn">
+  
+    Jamie Lennox
+  
+  </span></span>
+
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-12-01T12:55:29+10:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>1</span><span class='date-suffix'>st</span>, <span class='date-year'>2014</span></span> <span class='time'>12:55 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/keystone/'>keystone</a>, <a class='category' href='/blog/categories/openstack/'>openstack</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/09/15/how-to-use-keystoneclient-sessions/" title="Previous Post: How to use keystoneclient Sessions">&laquo; How to use keystoneclient Sessions</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 
 </div>
@@ -207,7 +208,10 @@
       var disqus_shortname = 'jamielennox';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security/';
+        var disqus_url = 'http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

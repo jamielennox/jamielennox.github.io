@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-09-15T12:36:21+10:00</updated>
+  <updated>2014-12-01T13:14:15+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,38 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[PKI Tokens Don't Give Better Security]]></title>
+    <link href="http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security/"/>
+    <updated>2014-12-01T12:55:29+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security</id>
+    <content type="html"><![CDATA[<p>This will be real quick.</p>
+
+<p>Every now and then I come across something that mentions how you should use PKI tokens in keystone as the cryptography gives it better security.
+It happened today and so I thought I should clarify:</p>
+
+<p><strong>There is no added security benefit to using keystone with PKI tokens over UUID tokens.</strong></p>
+
+<p>There are advantages to PKI tokens:</p>
+
+<ul>
+<li>Token validation without a request to keystone means less impact on keystone.</li>
+</ul>
+
+
+<p>And there are disadvantages:</p>
+
+<ul>
+<li>Larger token size.</li>
+<li>Additional complexity to set up.</li>
+</ul>
+
+
+<p>However the fundamental model, that this opaque chunk of data in the &lsquo;X-Auth-Token&rsquo; header indicates that this request is authenticated does not change between PKI and UUID tokens.
+If someone steals your PKI token you are just as screwed as if they stole your UUID token.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[How to Use Keystoneclient Sessions]]></title>

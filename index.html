@@ -9,7 +9,7 @@
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="In the last post I did on keystoneclient sessions there was a lot of hand waving about how they should work but it&rsquo;s not merged yet. &hellip;">
+  <meta name="description" content="This will be real quick. Every now and then I come across something that mentions how you should use PKI tokens in keystone as the cryptography gives &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -80,6 +80,61 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/01/pki-tokens-dont-give-better-security/">PKI Tokens Don't Give Better Security</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-12-01T12:55:29+10:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>1</span><span class='date-suffix'>st</span>, <span class='date-year'>2014</span></span> <span class='time'>12:55 pm</span></time>
+        
+           | <a href="/blog/2014/12/01/pki-tokens-dont-give-better-security/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security/">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This will be real quick.</p>
+
+<p>Every now and then I come across something that mentions how you should use PKI tokens in keystone as the cryptography gives it better security.
+It happened today and so I thought I should clarify:</p>
+
+<p><strong>There is no added security benefit to using keystone with PKI tokens over UUID tokens.</strong></p>
+
+<p>There are advantages to PKI tokens:</p>
+
+<ul>
+<li>Token validation without a request to keystone means less impact on keystone.</li>
+</ul>
+
+
+<p>And there are disadvantages:</p>
+
+<ul>
+<li>Larger token size.</li>
+<li>Additional complexity to set up.</li>
+</ul>
+
+
+<p>However the fundamental model, that this opaque chunk of data in the &lsquo;X-Auth-Token&rsquo; header indicates that this request is authenticated does not change between PKI and UUID tokens.
+If someone steals your PKI token you are just as screwed as if they stole your UUID token.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1367,61 +1422,6 @@ For the time being some features from nova such as authentication plugins specif
 Much of what is currently on keystoneclient that will be moved is defined publicly and cannot simply be thrown away even though they are typically attributes and abstract functions that a user should have no need of.</p>
 
 <p>Hopefully this or something very similar will be coming to the various OpenStack clients soon.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/04/09/user-access-to-libvirtd/">User Access to Libvirtd</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2013-04-09T11:50:00+10:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>9</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>11:50 am</span></time>
-        
-           | <a href="/blog/2013/04/09/user-access-to-libvirtd/#disqus_thread"
-             data-disqus-identifier="http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd/">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>To enable access to libvirtd without sudo:</p>
-
-<ol>
-<li>Create a group for privileged users, I called mine <code>libvirt</code> and add your users to it.</li>
-<li>Create a new file in <code>/etc/polkit-1/rules.d/</code> i called mine <code>50-libvirt-group.rules</code></li>
-<li>Add the following function:</li>
-</ol>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>polkit.addRule(function(action, subject) {
-</span><span class='line'>    if (action.id == "org.libvirt.unix.manage" &&
-</span><span class='line'>        subject.isInGroup('libvirt') ) {
-</span><span class='line'>        return polkit.Result.YES;
-</span><span class='line'>    }
-</span><span class='line'>});</span></code></pre></td></tr></table></div></figure>
-
-
-
 </div>
   
   

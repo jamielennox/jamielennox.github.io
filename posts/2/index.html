@@ -9,8 +9,8 @@
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="CMS is the IETF&rsquo;s standardized approach to cryptographically secure messages.
-It provides a BER encoded, ASN1 defined means of communicating &hellip;">
+  <meta name="description" content="To enable access to libvirtd without sudo: Create a group for privileged users, I called mine libvirt and add your users to it.
+Create a new file in &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,61 @@ It provides a BER encoded, ASN1 defined means of communicating &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/04/09/user-access-to-libvirtd/">User Access to Libvirtd</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2013-04-09T11:50:00+10:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>9</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>11:50 am</span></time>
+        
+           | <a href="/blog/2013/04/09/user-access-to-libvirtd/#disqus_thread"
+             data-disqus-identifier="http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd/">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>To enable access to libvirtd without sudo:</p>
+
+<ol>
+<li>Create a group for privileged users, I called mine <code>libvirt</code> and add your users to it.</li>
+<li>Create a new file in <code>/etc/polkit-1/rules.d/</code> i called mine <code>50-libvirt-group.rules</code></li>
+<li>Add the following function:</li>
+</ol>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>polkit.addRule(function(action, subject) {
+</span><span class='line'>    if (action.id == "org.libvirt.unix.manage" &&
+</span><span class='line'>        subject.isInGroup('libvirt') ) {
+</span><span class='line'>        return polkit.Result.YES;
+</span><span class='line'>    }
+</span><span class='line'>});</span></code></pre></td></tr></table></div></figure>
+
+
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
