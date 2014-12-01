@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: openstack | jamielennox.net]]></title>
+  <title><![CDATA[Category: Openstack | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/openstack/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-12-01T13:26:56+10:00</updated>
+  <updated>2014-12-01T14:24:24+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[PKI tokens don't give better security]]></title>
+    <title type="html"><![CDATA[PKI Tokens Don't Give Better Security]]></title>
     <link href="http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security/"/>
     <updated>2014-12-01T12:55:29+10:00</updated>
     <id>http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security</id>
@@ -46,7 +46,7 @@ If someone steals your PKI token you are just as screwed as if they stole your U
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[How to use keystoneclient Sessions]]></title>
+    <title type="html"><![CDATA[How to Use Keystoneclient Sessions]]></title>
     <link href="http://www.jamielennox.net/blog/2014/09/15/how-to-use-keystoneclient-sessions/"/>
     <updated>2014-09-15T09:13:36+10:00</updated>
     <id>http://www.jamielennox.net/blog/2014/09/15/how-to-use-keystoneclient-sessions</id>
@@ -230,7 +230,7 @@ Some explanation is available on the <a href="http://docs.openstack.org/develope
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[requests-mock]]></title>
+    <title type="html"><![CDATA[Requests-mock]]></title>
     <link href="http://www.jamielennox.net/blog/2014/08/26/requests-mock/"/>
     <updated>2014-08-26T12:26:23+10:00</updated>
     <id>http://www.jamielennox.net/blog/2014/08/26/requests-mock</id>
@@ -572,7 +572,7 @@ I was considering a tool that could use the <code>Commit-Id</code> to figure out
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[identity_uri in Auth Token Middleware]]></title>
+    <title type="html"><![CDATA[Identity_uri in Auth Token Middleware]]></title>
     <link href="http://www.jamielennox.net/blog/2014/05/21/identity-uri-in-auth-token-middleware/"/>
     <updated>2014-05-21T14:54:00+10:00</updated>
     <id>http://www.jamielennox.net/blog/2014/05/21/identity-uri-in-auth-token-middleware</id>

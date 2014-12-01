@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: devstack | jamielennox.net]]></title>
+  <title><![CDATA[Category: Devstack | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/devstack/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-12-01T13:26:56+10:00</updated>
+  <updated>2014-12-01T14:24:24+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Keystone with HTTPd in devstack]]></title>
+    <title type="html"><![CDATA[Keystone With HTTPd in Devstack]]></title>
     <link href="http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack/"/>
     <updated>2013-09-30T13:53:00+10:00</updated>
     <id>http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack</id>

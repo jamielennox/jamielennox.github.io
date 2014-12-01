@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: python | jamielennox.net]]></title>
+  <title><![CDATA[Category: Python | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-12-01T13:26:56+10:00</updated>
+  <updated>2014-12-01T14:24:24+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[requests-mock]]></title>
+    <title type="html"><![CDATA[Requests-mock]]></title>
     <link href="http://www.jamielennox.net/blog/2014/08/26/requests-mock/"/>
     <updated>2014-08-26T12:26:23+10:00</updated>
     <id>http://www.jamielennox.net/blog/2014/08/26/requests-mock</id>
@@ -285,7 +285,7 @@ In this case every request other than the first will get a 401 error:</li>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Dealing with .pyc]]></title>
+    <title type="html"><![CDATA[Dealing With .pyc]]></title>
     <link href="http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc/"/>
     <updated>2014-02-18T11:08:00+10:00</updated>
     <id>http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc</id>
