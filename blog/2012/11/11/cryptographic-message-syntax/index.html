@@ -125,14 +125,14 @@ The meat of the post is a list of each CMS data type and the most important part
 How to give that key to someone else is outside this message.
 It&rsquo;s defined as:</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 </pre></td><td class='code'><pre><code class=''><span class='line'>EncryptedData ::= SEQUENCE {
 </span><span class='line'>  version CMSVersion,
 </span><span class='line'>  encryptedContentInfo EncryptedContentInfo,
-</span><span class='line'>  unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span><span class='line'>  unprotectedAttrs [1] IMPLICIT UnprotectedAttributes OPTIONAL }</span></code></pre></td></tr></table></div></figure>
 
 
 <h3>DigestedData</h3>
@@ -140,7 +140,7 @@ It&rsquo;s defined as:</p>
 <p>Provides a digest along with the plaintext.
 Typically this is then wrapped by an EnvelopedData or such to provide Integrity to a message.</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -149,7 +149,7 @@ Typically this is then wrapped by an EnvelopedData or such to provide Integrity 
 </span><span class='line'>  version CMSVersion,
 </span><span class='line'>  digestAlgorithm DigestAlgorithmIdentifier,
 </span><span class='line'>  encapContentInfo EncapsulatedContentInfo,
-</span><span class='line'>  digest Digest }</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span><span class='line'>  digest Digest }</span></code></pre></td></tr></table></div></figure>
 
 
 <h3>SignedData</h3>
@@ -158,7 +158,7 @@ Typically this is then wrapped by an EnvelopedData or such to provide Integrity 
 In the regular signing way, each signer creates a digest of the payload and encrypts it with their private key.
 The message contains the certificate of the signers and can contain a store of certificates and CRLs for cert path validation by the receiver.</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -191,7 +191,7 @@ The message contains the certificate of the signers and can contain a store of c
 </span><span class='line'>  encapContentInfo EncapsulatedContentInfo,
 </span><span class='line'>  certificates [0] IMPLICIT CertificateSet OPTIONAL,
 </span><span class='line'>  crls [1] IMPLICIT RevocationInfoChoices OPTIONAL,
-</span><span class='line'>  signerInfos SignerInfos }</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span><span class='line'>  signerInfos SignerInfos }</span></code></pre></td></tr></table></div></figure>
 
 
 <h3>EnvelopedData</h3>
@@ -201,7 +201,7 @@ The most common recipients are a certificate (or the private key of), a symmetri
 The payload is encrypted with a symmetric key and then this key is encrypted with the key provided by the recipient (or PBKDF for passwords).
 So on decoding the recipient will decrypt the symmetric key from the RecipientInfo associated with them and then use that to decrypt the plaintext mesage.</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -226,7 +226,7 @@ So on decoding the recipient will decrypt the symmetric key from the RecipientIn
 </span><span class='line'>  kari [1] KeyAgreeRecipientInfo,
 </span><span class='line'>  kekri [2] KEKRecipientInfo,
 </span><span class='line'>  pwri [3] PasswordRecipientinfo,
-</span><span class='line'>  ori [4] OtherRecipientInfo }</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span><span class='line'>  ori [4] OtherRecipientInfo }</span></code></pre></td></tr></table></div></figure>
 
 
 <h3>AuthenticatedData</h3>
@@ -236,7 +236,7 @@ It generates a new MAC secret key and with it generates a MAC digest for the pla
 It then encrypts the MAC secret key to any number of recipients similar to EnvelopedData and includes the MAC in the message.
 The message itself is not encrypted and can be retrieved, but you cannot assert the message integrity without being one of the explicit recipients.</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -255,7 +255,7 @@ The message itself is not encrypted and can be retrieved, but you cannot assert 
 </span><span class='line'>  encapContentInfo EncapsulatedContentInfo,
 </span><span class='line'>  authAttrs [2] IMPLICIT AuthAttributes OPTIONAL,
 </span><span class='line'>  mac MessageAuthenticationCode,
-</span><span class='line'>  unauthAttrs [3] IMPLICIT UnauthAttributes OPTIONAL }</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span><span class='line'>  unauthAttrs [3] IMPLICIT UnauthAttributes OPTIONAL }</span></code></pre></td></tr></table></div></figure>
 
 </div>
 

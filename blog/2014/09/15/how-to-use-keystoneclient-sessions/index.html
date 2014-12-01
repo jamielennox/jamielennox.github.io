@@ -136,7 +136,7 @@ There are also some plugins living in the contrib section of keystoneclient for 
 
 <p>You can then create a session with that plugin.</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -170,7 +170,7 @@ There are also some plugins living in the contrib section of keystoneclient for 
 </span><span class='line'>
 </span><span class='line'><span class="n">keystone</span> <span class="o">=</span> <span class="n">keystone_v3</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
 </span><span class='line'><span class="n">nova</span> <span class="o">=</span> <span class="n">nova_v2</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>Keystone and nova clients will now share an authentication token fetched with keystone&rsquo;s v3 authentication.
@@ -189,7 +189,7 @@ This will not affect 90% of users who just make calls to the APIs, however if yo
 If you are are an application that uses many authentication plugins (eg, heat or horizon) you may want to take advantage of using a single session&rsquo;s connection pooling or caching whilst juggling multiple authentications.
 You can therefore create a session without an authentication plugin and specify the plugin that will be used with that client instance, for example:</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -205,7 +205,7 @@ You can therefore create a session without an authentication plugin and specify 
 </span><span class='line'><span class="n">auth</span> <span class="o">=</span> <span class="n">get_auth_plugin</span><span class="p">()</span>  <span class="c"># you could deserialize it from a db,</span>
 </span><span class='line'>                          <span class="c"># fetch it based on a cookie value...</span>
 </span><span class='line'><span class="n">keystone</span> <span class="o">=</span> <span class="n">keystone_v3</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">SESSION</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>Auth plugins set on the client will override any auth plugin set on the session - but I&rsquo;d recommend you pick one method based on your application&rsquo;s needs and stick with it.</p>
@@ -216,29 +216,29 @@ You can therefore create a session without an authentication plugin and specify 
 The documentation on exactly what options are supported is lacking right now and you will probably need to look at code to figure out everything that is supported.
 I promise to improve this, but to get you started you need to register the options globally:</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">group</span> <span class="o">=</span> <span class="s">&#39;keystoneclient&#39;</span>  <span class="c"># the option group</span>
 </span><span class='line'><span class="n">keystoneclient</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">register_conf_options</span><span class="p">(</span><span class="n">CONF</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
 </span><span class='line'><span class="n">keystoneclient</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">register_conf_options</span><span class="p">(</span><span class="n">CONF</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>And then load the objects where you need them:</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">auth</span> <span class="o">=</span> <span class="n">keystoneclient</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">load_from_conf_options</span><span class="p">(</span><span class="n">CONF</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
 </span><span class='line'><span class="n">session</span> <span class="o">=</span> <span class="n">ksc_session</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">load_from_conf_options</span><span class="p">(</span><span class="n">CONF</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
 </span><span class='line'><span class="n">keystone</span> <span class="o">=</span> <span class="n">keystone_v3</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>Will load options that look like:</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -254,7 +254,7 @@ I promise to improve this, but to get you started you need to register the optio
 </span><span class='line'><span class="na">project_name</span> <span class="o">=</span> <span class="s">demo</span>
 </span><span class='line'><span class="na">project_domain_name</span> <span class="o">=</span> <span class="s">default</span>
 </span><span class='line'><span class="na">user_domain_name</span> <span class="o">=</span> <span class="s">default</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>There is also support for transitioning existing code bases to new option names if they are not the same as what your application uses.</p>
@@ -263,7 +263,7 @@ I promise to improve this, but to get you started you need to register the optio
 
 <p>A very similar process is used to load sessions and plugins from an argparse parser.</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -287,12 +287,12 @@ I promise to improve this, but to get you started you need to register the optio
 </span><span class='line'><span class="n">auth</span> <span class="o">=</span> <span class="n">keystoneclient</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">load_from_argparse_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 </span><span class='line'><span class="n">session</span> <span class="o">=</span> <span class="n">keystoneclient</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">load_from_cli_options</span><span class="p">(</span><span class="n">args</span><span class="p">,</span>
 </span><span class='line'>                                                               <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>This produces an application with the following options:</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -320,7 +320,7 @@ I promise to improve this, but to get you started you need to register the optio
 </span><span class='line'>            <span class="o">[</span>--os-user-domain-id OS_USER_DOMAIN_ID<span class="o">]</span>
 </span><span class='line'>            <span class="o">[</span>--os-user-domain-name OS_USER_DOMAIN_NAME<span class="o">]</span>
 </span><span class='line'>            <span class="o">[</span>--os-password OS_PASSWORD<span class="o">]</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>There is an ongoing effort to create a standardized CLI plugin that can be used by new clients rather than have people provide an &ndash;os-auth-plugin every time.
@@ -333,7 +333,7 @@ The adapter will handle the per-client authentication plugins, handle <code>regi
 
 <p>The basic client should look like:</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -345,7 +345,7 @@ The adapter will handle the per-client authentication plugins, handle <code>regi
 </span><span class='line'>        kwargs.set_default<span class="o">(</span><span class="s1">&#39;user_agent&#39;</span>, <span class="s1">&#39;python-myclient&#39;</span><span class="o">)</span>
 </span><span class='line'>        kwargs.set_default<span class="o">(</span><span class="s1">&#39;service_type&#39;</span>, <span class="s1">&#39;my&#39;</span><span class="o">)</span>
 </span><span class='line'>        self.http <span class="o">=</span> keystoneclient.adapter.Adapter<span class="o">(</span>**kwargs<span class="o">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>The adapter then has <code>.get()</code> and <code>.post()</code> and other http methods that the clients expect.</p>
@@ -403,7 +403,7 @@ Some explanation is available on the <a href="http://docs.openstack.org/develope
         <a class="basic-alignment left" href="/blog/2014/08/26/requests-mock/" title="Previous Post: requests-mock">&laquo; requests-mock</a>
       
       
-        <a class="basic-alignment right" href="/blog/2014/12/01/pki-tokens-dont-give-better-security/" title="Next Post: PKI tokens don't give better security">PKI tokens don't give better security &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2014/12/01/pki-tokens-dont-give-better-security/" title="Next Post: PKI tokens don't give better security">PKI tokens don&#8217;t give better security &raquo;</a>
       
     </p>
   </footer>

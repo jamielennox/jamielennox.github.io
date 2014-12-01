@@ -145,7 +145,7 @@ The current OpenStack requirements still have 0.4 so you&rsquo;ll need to wait f
 Hence all the variable names and conventions should be as close to a <code>requests.Response</code> as possible.
 For example:</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -167,13 +167,13 @@ For example:</p>
 </span><span class='line'><span class="s">u&#39;Not really google&#39;</span>
 </span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span>
 </span><span class='line'><span class="mi">218</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>So <code>text</code> in the mock equates to <code>text</code> in the response and similarly for <code>status_code</code>.
 Some more advanced usage of the requests library:</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -201,12 +201,12 @@ Some more advanced usage of the requests library:</p>
 </span><span class='line'><span class="p">{</span><span class="s">&#39;test&#39;</span><span class="p">:</span> <span class="s">&#39;header&#39;</span><span class="p">}</span>
 </span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;test&#39;</span><span class="p">]</span>
 </span><span class='line'><span class="s">&#39;header&#39;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>You can also use callbacks to create responses dynamically:</p>
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -236,7 +236,7 @@ Some more advanced usage of the requests library:</p>
 </span><span class='line'><span class="p">{</span><span class="s">&#39;test&#39;</span><span class="p">:</span> <span class="s">&#39;header&#39;</span><span class="p">}</span>
 </span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
 </span><span class='line'><span class="p">{</span><span class="s">u&#39;request&#39;</span><span class="p">:</span> <span class="s">u&#39;data&#39;</span><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>Note that because the callback was passed as the <code>json</code> parameter the return type is expected to be the same as if you had passed it as a predefined <code>json=blob</code> value.
@@ -252,11 +252,11 @@ In this case every request other than the first will get a 401 error:</li>
 </ul>
 
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="p">[{</span><span class="s">&#39;json&#39;</span><span class="p">:</span> <span class="n">_request_callback</span><span class="p">},</span>
 </span><span class='line'>            <span class="p">{</span><span class="s">&#39;text&#39;</span><span class="p">:</span> <span class="s">&#39;Not Allowed&#39;</span><span class="p">,</span> <span class="s">&#39;status_code&#39;</span><span class="p">:</span> <span class="mi">401</span><span class="p">}])</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <ul>
@@ -264,7 +264,7 @@ In this case every request other than the first will get a 401 error:</li>
 </ul>
 
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -272,7 +272,7 @@ In this case every request other than the first will get a 401 error:</li>
 </span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">last_request</span>  <span class="c"># the last request</span>
 </span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">call_count</span>  <span class="c"># number of requests</span>
 </span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">called</span>  <span class="c"># boolean, True if called</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <ul>
@@ -280,9 +280,9 @@ In this case every request other than the first will get a 401 error:</li>
 </ul>
 
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/path/only&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <ul>
@@ -290,9 +290,9 @@ In this case every request other than the first will get a 401 error:</li>
 </ul>
 
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <ul>
@@ -300,9 +300,9 @@ In this case every request other than the first will get a 401 error:</li>
 </ul>
 
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <ul>
@@ -310,9 +310,9 @@ In this case every request other than the first will get a 401 error:</li>
 </ul>
 
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">request_headers</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;X-Auth-Token&#39;</span><span class="p">:</span> <span class="s">&#39;XXXXX&#39;</span><span class="p">})</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <ul>
@@ -320,7 +320,7 @@ In this case every request other than the first will get a 401 error:</li>
 </ul>
 
 
-<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -328,7 +328,7 @@ In this case every request other than the first will get a 401 error:</li>
 </span><span class='line'><span class="k">def</span> <span class="nf">test_a_thing</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
 </span><span class='line'>   <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s">&#39;resp&#39;</span><span class="p">)</span>
 </span><span class='line'>   <span class="o">...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <h2>Try it!</h2>

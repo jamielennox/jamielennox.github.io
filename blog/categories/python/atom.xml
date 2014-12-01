@@ -4,7 +4,7 @@
   <title><![CDATA[Category: python | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-12-01T13:14:15+10:00</updated>
+  <updated>2014-12-01T13:26:56+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -59,7 +59,7 @@ The current OpenStack requirements still have 0.4 so you&rsquo;ll need to wait f
 Hence all the variable names and conventions should be as close to a <code>requests.Response</code> as possible.
 For example:</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -84,17 +84,17 @@ For example:</p>
 </span><span class='line'><span class="o">&amp;</span><span class="n">hellip</span><span class="p">;</span>     <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
 </span><span class='line'><span class="o">&amp;</span><span class="n">hellip</span><span class="p">;</span>
 </span><span class='line'><span class="n">r</span><span class="o">.</span><span class="n">text</span>
-</span><span class='line'><span class="n">u</span><span class="o">&amp;</span><span class="c">#8217;Not really google&amp;#8217;</span>
+</span><span class='line'><span class="s">u&#39;Not really google&#39;</span>
 </span><span class='line'><span class="n">r</span><span class="o">.</span><span class="n">status_code</span>
 </span><span class='line'><span class="mi">218</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;&lt;/</span><span class="n">blockquote</span><span class="o">&gt;&lt;/</span><span class="n">blockquote</span><span class="o">&gt;&lt;/</span><span class="n">blockquote</span><span class="o">&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>So <code>text</code> in the mock equates to <code>text</code> in the response and similarly for <code>status_code</code>.
 Some more advanced usage of the requests library:</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -119,9 +119,9 @@ Some more advanced usage of the requests library:</p>
 </span><span class='line'><span class="o">&amp;</span><span class="n">hellip</span><span class="p">;</span>     <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
 </span><span class='line'><span class="o">&amp;</span><span class="n">hellip</span><span class="p">;</span>
 </span><span class='line'><span class="n">r</span><span class="o">.</span><span class="n">text</span>
-</span><span class='line'><span class="n">u</span><span class="o">&amp;</span><span class="c">#8217;{&amp;ldquo;hello&amp;rdquo;: &amp;ldquo;world&amp;rdquo;}&amp;lsquo;</span>
+</span><span class='line'><span class="s">u&#39;{&amp;ldquo;hello&amp;rdquo;: &amp;ldquo;world&amp;rdquo;}&amp;lsquo;</span>
 </span><span class='line'><span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span><span class="n">u</span><span class="o">&amp;</span><span class="c">#8217;hello&amp;rsquo;: u&amp;#8217;world&amp;#8217;}</span>
+</span><span class='line'><span class="p">{</span><span class="s">u&#39;hello&amp;rsquo;: u&#39;</span><span class="n">world</span><span class="s">&#39;}</span>
 </span><span class='line'><span class="n">r</span><span class="o">.</span><span class="n">status_code</span>
 </span><span class='line'><span class="mi">200</span>
 </span><span class='line'><span class="n">r</span><span class="o">.</span><span class="n">headers</span>
@@ -130,11 +130,11 @@ Some more advanced usage of the requests library:</p>
 </span><span class='line'><span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">header</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;&lt;/</span><span class="n">blockquote</span><span class="o">&gt;&lt;/</span><span class="n">blockquote</span><span class="o">&gt;&lt;/</span><span class="n">blockquote</span><span class="o">&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>You can also use callbacks to create responses dynamically:</p>
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -169,10 +169,10 @@ Some more advanced usage of the requests library:</p>
 </span><span class='line'><span class="n">r</span><span class="o">.</span><span class="n">headers</span>
 </span><span class='line'><span class="p">{</span><span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">test</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;:</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">header</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;}</span>
 </span><span class='line'><span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span><span class="n">u</span><span class="o">&amp;</span><span class="c">#8217;request&amp;#8217;: u&amp;#8217;data&amp;#8217;}&lt;/p&gt;&lt;/blockquote&gt;&lt;/blockquote&gt;&lt;/blockquote&gt;</span>
+</span><span class='line'><span class="p">{</span><span class="s">u&#39;request&#39;</span><span class="p">:</span> <span class="s">u&#39;data&#39;</span><span class="p">}</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;&lt;/</span><span class="n">blockquote</span><span class="o">&gt;&lt;/</span><span class="n">blockquote</span><span class="o">&gt;&lt;/</span><span class="n">blockquote</span><span class="o">&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>Note that because the callback was passed as the <code>json</code> parameter the return type is expected to be the same as if you had passed it as a predefined <code>json=blob</code> value.
 If you wanted to return <code>text</code> the callback would be on the <code>text</code> parameter.</p>
@@ -187,18 +187,18 @@ In this case every request other than the first will get a 401 error:</li>
 </ul>
 
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="p">[{</span><span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">json</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;:</span> <span class="n">_request_callback</span><span class="p">},</span>
 </span><span class='line'>            <span class="p">{</span><span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">text</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;:</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">Not</span> <span class="n">Allowed</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">status_code</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;:</span> <span class="mi">401</span><span class="p">}])</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <ul>
 <li>See the history of requests:</li>
 </ul>
 
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -206,50 +206,50 @@ In this case every request other than the first will get a 401 error:</li>
 </span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">last_request</span>  <span class="c"># the last request</span>
 </span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">call_count</span>  <span class="c"># number of requests</span>
 </span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">called</span>  <span class="c"># boolean, True if called</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <ul>
 <li>match on the only the URL path:</li>
 </ul>
 
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">only</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <ul>
 <li>match on any method:</li>
 </ul>
 
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <ul>
 <li>or match on any URL:</li>
 </ul>
 
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <ul>
 <li>match on headers that are part of the request (useful for distinguishing between multiple requests to the same URL):</li>
 </ul>
 
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">request_headers</span><span class="o">=</span><span class="p">{</span><span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">X</span><span class="o">-</span><span class="n">Auth</span><span class="o">-</span><span class="n">Token</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;:</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">XXXXX</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;})</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <ul>
 <li>be used as a function decorator</li>
 </ul>
 
 
-<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -257,7 +257,7 @@ In this case every request other than the first will get a 401 error:</li>
 </span><span class='line'><span class="k">def</span> <span class="nf">test_a_thing</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
 </span><span class='line'>   <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">,</span> <span class="n">text</span><span class="o">=&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">resp</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;)</span>
 </span><span class='line'>   <span class="o">&amp;</span><span class="n">hellip</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <h2>Try it!</h2>
 
