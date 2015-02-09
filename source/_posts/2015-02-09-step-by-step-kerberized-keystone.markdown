@@ -15,6 +15,8 @@ They create:
  - A [FreeIPA](https://www.freeipa.org) server machine called `ipa.test.jamielennox.net`
  - A [Packstack](https://openstack.redhat.com/Quickstart) all in one deployment of OpenStack called `openstack.test.jamielennox.net`
 
+<!-- more -->
+
 Notes:
 
  - I use the realm `TEST.JAMIELENNOX.NET`. There is no meaning to this domain, it doesn't exist or make any difference to the deployment.
@@ -389,4 +391,4 @@ Getting to the point where we can support the `openstack` command line tool has 
 Special thanks have to go to:
 
  - [Jose Castro Leon](https://twitter.com/josecastroleon) and [Marek Dennis](https://twitter.com/marekdenis) from CERN who did the initial Kerberos implementation and have been pushing the approach.
- - [Nathan Kinder](https://blog-nkinder.rhcloud.com/) who [scripted a setup](https://github.com/nkinder/rdo-vm-factory/blob/master/rdo-kerberos-setup/vm-post-cloud-init-rdo.sh) slightly more advanced and production worth that I cheated off for a number of settings.
+ - [Nathan Kinder](https://blog-nkinder.rhcloud.com/) who [scripted a setup](https://github.com/nkinder/rdo-vm-factory/blob/master/rdo-kerberos-setup/vm-post-cloud-init-rdo.sh) that is more advanced and production worthy that I cheated off for a number of settings.
