@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Keystone | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/keystone/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-12-01T16:00:36+10:00</updated>
+  <updated>2015-02-12T20:23:32+11:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[PKI Tokens Don't Give Better Security]]></title>
     <link href="http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security/"/>
-    <updated>2014-12-01T12:55:29+10:00</updated>
+    <updated>2014-12-01T13:55:29+11:00</updated>
     <id>http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security</id>
     <content type="html"><![CDATA[<p>This will be real quick.</p>
 
@@ -267,7 +267,7 @@ identity_uri = http://127.0.0.1:35357
   <entry>
     <title type="html"><![CDATA[Keystone Token Binding]]></title>
     <link href="http://www.jamielennox.net/blog/2013/10/22/keystone-token-binding/"/>
-    <updated>2013-10-22T11:48:00+10:00</updated>
+    <updated>2013-10-22T11:48:00+11:00</updated>
     <id>http://www.jamielennox.net/blog/2013/10/22/keystone-token-binding</id>
     <content type="html"><![CDATA[<p>With the Havana release of OpenStack, Keystone gains the ability to issue and verify tokens &ldquo;bound&rdquo; to some authentication mechanism.
 To understand the reason for this feature we need to first consider the security model of the current token architecture.</p>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Crypto | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/crypto/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-12-01T16:00:36+10:00</updated>
+  <updated>2015-02-12T20:23:32+11:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[Cryptographic Message Syntax]]></title>
     <link href="http://www.jamielennox.net/blog/2012/11/11/cryptographic-message-syntax/"/>
-    <updated>2012-11-11T17:13:00+10:00</updated>
+    <updated>2012-11-11T17:13:00+11:00</updated>
     <id>http://www.jamielennox.net/blog/2012/11/11/cryptographic-message-syntax</id>
     <content type="html"><![CDATA[<p>CMS is the <a href="http://en.wikipedia.org/wiki/IETF">IETF</a>&rsquo;s standardized approach to cryptographically secure messages.
 It provides a BER encoded, ASN1 defined means of communicating the parameters and data of a message between recipients.</p>

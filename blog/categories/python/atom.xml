@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Python | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2014-12-01T16:00:36+10:00</updated>
+  <updated>2015-02-12T20:23:32+11:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -287,7 +287,7 @@ In this case every request other than the first will get a 401 error:</li>
   <entry>
     <title type="html"><![CDATA[Dealing With .pyc]]></title>
     <link href="http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc/"/>
-    <updated>2014-02-18T11:08:00+10:00</updated>
+    <updated>2014-02-18T11:08:00+11:00</updated>
     <id>http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc</id>
     <content type="html"><![CDATA[<p>I have often found that when dealing with multiple branches and refactoring patches I get caught out by left over *.pyc files from python files that don&rsquo;t exist on this branch.
 This bit me again recently so I went looking for options.</p>
