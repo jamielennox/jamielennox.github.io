@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Openstack | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/openstack/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2015-02-12T20:23:32+11:00</updated>
+  <updated>2015-02-17T17:27:31+11:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,262 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Loading Authentication Plugins]]></title>
+    <link href="http://www.jamielennox.net/blog/2015/02/17/loading-authentication-plugins/"/>
+    <updated>2015-02-17T09:08:03+11:00</updated>
+    <id>http://www.jamielennox.net/blog/2015/02/17/loading-authentication-plugins</id>
+    <content type="html"><![CDATA[<p>I&rsquo;ve been pushing a lot on the authentication plugins aspect of keystoneclient recently.
+They allow us to generalize the process of getting a token from OpenStack such that we can enable new mechanisms like <a href="https://github.com/openstack/python-keystoneclient-kerberos">Kerberos</a> or client certificate authentication - without having to modify all the clients.</p>
+
+<p>For most people hardcoding credentials into scripts is not an option, both for security and for reusability reasons.
+By having a standard loading mechanism for this selection of new plugins we can ensure that applications we write can be used with future plugins.
+I am currently working on getting this method into the existing services to allow for more extensible service authentication, so this pattern should become more common in future.</p>
+
+<p>There are two loading mechanisms for authentication plugins provided by keystoneclient:</p>
+
+<ul>
+<li>Loading from an <a href="http://docs.openstack.org/developer/oslo.config">oslo.config</a> CONF object.</li>
+<li>Loading from an <a href="https://docs.python.org/2/library/argparse.html">argparse</a> command line</li>
+</ul>
+
+
+<h2>Loading from CONF</h2>
+
+<p>We can define a plugin from CONF like:</p>
+
+<pre><code class="ini">[somegroup]
+auth_plugin = v3password
+auth_url = http://keystone.test:5000/v3
+username = user
+password = pass
+user_domain_name = domain
+project_name = proj
+project_domain_name = domain
+</code></pre>
+
+<p>The initially required field here is <code>auth_plugin</code> which specifies the name of the plugin to load.
+All other parameters in that section are dependant on the information that plugin (in this case v3password) requires.</p>
+
+<p>To load that plugin from an application we do:</p>
+
+<p><div><script src='https://gist.github.com/3b26bfb8e80fa48133e9.js?file=test-conf.py'></script>
+<noscript><pre><code>import sys
+
+from keystoneclient import auth
+from keystoneclient import session
+from oslo.config import cfg
+
+cfg.CONF(sys.argv[1:])
+
+auth.register_conf_options(cfg.CONF, 'somegroup')
+session.Session.register_conf_options(cfg.CONF, 'somegroup')
+
+plugin = auth.load_from_conf_options(cfg.CONF, 'somegroup')
+sess = session.Session.load_from_conf_options(cfg.CONF,
+                                              'somegroup',
+                                              auth=plugin)
+</code></pre></noscript></div>
+</p>
+
+<p>Then create <code>novaclient</code>, <code>cinderclient</code> or whichever client you wish to talk to with that session as normal.</p>
+
+<p>You can also use an <code>auth_section</code> parameter to specify a different group in which the authentication credentials are stored.
+This allows you to reuse the same credentials in multiple places throughout your configuration file without copying and pasting.</p>
+
+<pre><code class="ini">[somegroup]
+auth_section = credentials
+
+[othergroup]
+auth_section = credentials
+
+[credentials]
+auth_plugin = v3password
+auth_url = http://keystone.test:5000/v3
+username = user
+password = pass
+user_domain_name = domain
+project_name = proj
+project_domain_name = domain
+</code></pre>
+
+<p>The above loading code for <code>[somegroup]</code> or <code>[othergroup]</code> will load separate instances of the same authentication plugin.</p>
+
+<h2>Loading from the command line</h2>
+
+<p>The options present on the command line are very similar to that presented via the config file, and follow a pattern familiar to the existing openstack CLI applications.
+The equivalent options as specified in the config above would be presented as:</p>
+
+<pre><code class="sh">./myapp --os-auth-plugin v3password \
+        --os-auth-url http://keystone.test:5000/v3 \
+        --os-username user \
+        --os-password pass \
+        --os-user-domain-name domain \
+        --os-project-name proj \
+        --os-project-domain-name domain
+        command
+</code></pre>
+
+<p>Or</p>
+
+<pre><code class="sh">export OS_AUTH_PLUGIN=v3password
+export OS_AUTH_URL=http://keystone.test:5000/v3
+export OS_USERNAME=user
+export OS_PASSWORD=pass
+export OS_USER_DOMAIN_NAME=domain
+export OS_PROJECT_NAME=proj
+export OS_PROJECT_DOMAIN_NAME=domain
+
+./myapp command
+</code></pre>
+
+<p>This is loaded from python via:</p>
+
+<p><div><script src='https://gist.github.com/4e22049c5bc57f4b68ec.js?file=test-cli.py'></script>
+<noscript><pre><code>import argparse
+import sys
+
+from keystoneclient import auth
+from keystoneclient import session
+
+parser = argparse.ArgumentParser('myapp')
+
+auth.register_argparse_arguments(parser, sys.argv[1:])
+session.Session.register_cli_options(parser)
+
+args = parser.parse_args()
+
+plugin = auth.load_from_argparse_arguments(args)
+sess = session.Session.load_from_cli_options(args, auth=plugin)
+</code></pre></noscript></div>
+</p>
+
+<p><strong>NOTE</strong>: I am aware that the syntax is wonky with the command for session loading and auth plugin loading different.
+This was one of those things that was &lsquo;optimized&rsquo; between reviews and managed to slip through.
+There is a review out to standardize this.</p>
+
+<p>This will also set <code>--help</code> appropriately, so if you are unsure of the arguments that this particular authentication plugin takes you can do:</p>
+
+<pre><code class="sh">./myapp --os-auth-plugin v3password --help
+
+usage: myapp [-h] [--os-auth-plugin &lt;name&gt;] [--os-auth-url OS_AUTH_URL]
+             [--os-domain-id OS_DOMAIN_ID] [--os-domain-name OS_DOMAIN_NAME]
+             [--os-project-id OS_PROJECT_ID]
+             [--os-project-name OS_PROJECT_NAME]
+             [--os-project-domain-id OS_PROJECT_DOMAIN_ID]
+             [--os-project-domain-name OS_PROJECT_DOMAIN_NAME]
+             [--os-trust-id OS_TRUST_ID] [--os-user-id OS_USER_ID]
+             [--os-user-name OS_USERNAME]
+             [--os-user-domain-id OS_USER_DOMAIN_ID]
+             [--os-user-domain-name OS_USER_DOMAIN_NAME]
+             [--os-password OS_PASSWORD] [--insecure]
+             [--os-cacert &lt;ca-certificate&gt;] [--os-cert &lt;certificate&gt;]
+             [--os-key &lt;key&gt;] [--timeout &lt;seconds&gt;]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --os-auth-plugin &lt;name&gt;
+                        The auth plugin to load
+  --insecure            Explicitly allow client to perform "insecure" TLS
+                        (https) requests. The server's certificate will not be
+                        verified against any certificate authorities. This
+                        option should be used with caution.
+  --os-cacert &lt;ca-certificate&gt;
+                        Specify a CA bundle file to use in verifying a TLS
+                        (https) server certificate. Defaults to
+                        env[OS_CACERT].
+  --os-cert &lt;certificate&gt;
+                        Defaults to env[OS_CERT].
+  --os-key &lt;key&gt;        Defaults to env[OS_KEY].
+  --timeout &lt;seconds&gt;   Set request timeout (in seconds).
+
+Authentication Options:
+  Options specific to the v3password plugin.
+
+  --os-auth-url OS_AUTH_URL
+                        Authentication URL
+  --os-domain-id OS_DOMAIN_ID
+                        Domain ID to scope to
+  --os-domain-name OS_DOMAIN_NAME
+                        Domain name to scope to
+  --os-project-id OS_PROJECT_ID
+                        Project ID to scope to
+  --os-project-name OS_PROJECT_NAME
+                        Project name to scope to
+  --os-project-domain-id OS_PROJECT_DOMAIN_ID
+                        Domain ID containing project
+  --os-project-domain-name OS_PROJECT_DOMAIN_NAME
+                        Domain name containing project
+  --os-trust-id OS_TRUST_ID
+                        Trust ID
+  --os-user-id OS_USER_ID
+                        User ID
+  --os-user-name OS_USERNAME, --os-username OS_USERNAME
+                        Username
+  --os-user-domain-id OS_USER_DOMAIN_ID
+                        User's domain id
+  --os-user-domain-name OS_USER_DOMAIN_NAME
+                        User's domain name
+  --os-password OS_PASSWORD
+                        User's password
+</code></pre>
+
+<p>To prevent polluting your CLI&rsquo;s help only the &lsquo;Authentication Options&rsquo; for the plugin you specified by &lsquo;&ndash;os-auth-plugin&rsquo; are added to the help.</p>
+
+<p>Having explained all this one of the primary application currently embracing authentication plugins, <a href="https://github.com/openstack/python-openstackclient">openstackclient</a>, currently handles its options slightly differently and you will need to use <code>--os-auth-type</code> instead of <code>--os-auth-plugin</code></p>
+
+<h2>Available plugins</h2>
+
+<p>The <a href="http://docs.openstack.org/developer/python-keystoneclient/authentication-plugins.html">documentation</a> for plugins provides basic features and parameters however it&rsquo;s not always going to be up to date with all options, especially for plugins not handled within keystoneclient.
+The following is a fairly simple script that lists all the plugins that are installed on the system and their options.</p>
+
+<p><div><script src='https://gist.github.com/7f5cfabd64a6922e643c.js?file=list-plugins.py'></script>
+<noscript><pre><code>import stevedore
+
+mgr = stevedore.ExtensionManager(namespace='keystoneclient.auth.plugin',
+                                 invoke_on_load=False)
+
+def print_plugin(ext):
+    print &quot;%s:&quot; % ext.entry_point.name
+
+    for opt in ext.plugin.get_options():
+        print &quot;    %s: %s&quot; % (opt.name, opt.help)
+
+mgr.map(print_plugin)
+</code></pre></noscript></div>
+</p>
+
+<p>Which for the <code>v3password</code> plugin we&rsquo;ve been using returns:</p>
+
+<pre><code>...
+v3password:
+    auth-url: Authentication URL
+    domain-id: Domain ID to scope to
+    domain-name: Domain name to scope to
+    project-id: Project ID to scope to
+    project-name: Project name to scope to
+    project-domain-id: Domain ID containing project
+    project-domain-name: Domain name containing project
+    trust-id: Trust ID
+    user-id: User ID
+    user-name: Username
+    user-domain-id: User's domain id
+    user-domain-name: User's domain name
+    password: User's password
+...
+</code></pre>
+
+<p>From that it&rsquo;s pretty simple to determine the correct format for parameters.</p>
+
+<ul>
+<li>When using the CLI you should prefix <code>--os-</code>, e.g. <code>auth-url</code> becomes <code>--os-auth-url</code>.</li>
+<li>Environment variables are upper-cased, and prefix <code>OS_</code> and replace <code>-</code> with <code>_</code>, e.g. <code>auth-url</code> becomes <code>OS_AUTH_URL</code>.</li>
+<li>Conf file variables replace <code>-</code> with <code>_</code> eg. <code>auth-url</code> becomes <code>auth_url</code>.</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Step-by-Step: Kerberized Keystone]]></title>
@@ -422,8 +678,8 @@ Then we fetch the keytab and put it somewhere apache can access it.</p>
 <p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="gp">[root@openstack]# ipa service-add HTTP/&lt;a href=&quot;&amp;#109;&amp;#97;&amp;#x69;&amp;#x6c;&amp;#x74;&amp;#x6f;&amp;#58;&amp;#111;&amp;#x70;&amp;#x65;&amp;#110;&amp;#x73;&amp;#116;&amp;#97;&amp;#99;&amp;#107;&amp;#x2e;&amp;#116;&amp;#x65;&amp;#x73;&amp;#116;&amp;#x2e;&amp;#x6a;&amp;#x61;&amp;#109;&amp;#105;&amp;#101;&amp;#108;&amp;#101;&amp;#x6e;&amp;#110;&amp;#111;&amp;#x78;&amp;#x2e;&amp;#x6e;&amp;#101;&amp;#x74;&amp;#64;&amp;#x54;&amp;#69;&amp;#x53;&amp;#x54;&amp;#x2e;&amp;#74;&amp;#x41;&amp;#77;&amp;#73;&amp;#69;&amp;#76;&amp;#x45;&amp;#78;&amp;#78;&amp;#79;&amp;#x58;&amp;#x2e;&amp;#78;&amp;#69;&amp;#84;&quot;&gt;&amp;#111;&amp;#112;&amp;#x65;&amp;#x6e;&amp;#115;&amp;#x74;&amp;#97;&amp;#x63;&amp;#x6b;&amp;#x2e;&amp;#x74;&amp;#101;&amp;#x73;&amp;#x74;&amp;#46;&amp;#x6a;&amp;#x61;&amp;#x6d;&amp;#x69;&amp;#x65;&amp;#108;&amp;#x65;&amp;#110;&amp;#110;&amp;#x6f;&amp;#120;&amp;#x2e;&amp;#x6e;&amp;#101;&amp;#x74;&amp;#x40;&amp;#x54;&amp;#x45;&amp;#83;&amp;#84;&amp;#x2e;&amp;#x4a;&amp;#65;&amp;#x4d;&amp;#x49;&amp;#69;&amp;#76;&amp;#x45;&amp;#x4e;&amp;#x4e;&amp;#x4f;&amp;#88;&amp;#46;&amp;#x4e;&amp;#x45;&amp;#</span>x54<span class="p">;</span>&lt;/a&gt;
-</span><span class='line'><span class="gp">[root@openstack]# ipa-getkeytab -s ipa.test.jamielennox.net -p HTTP/&lt;a href=&quot;&amp;#x6d;&amp;#97;&amp;#x69;&amp;#x6c;&amp;#116;&amp;#x6f;&amp;#58;&amp;#x6f;&amp;#112;&amp;#101;&amp;#110;&amp;#x73;&amp;#x74;&amp;#97;&amp;#x63;&amp;#x6b;&amp;#46;&amp;#x74;&amp;#101;&amp;#x73;&amp;#x74;&amp;#46;&amp;#106;&amp;#x61;&amp;#109;&amp;#105;&amp;#x65;&amp;#108;&amp;#x65;&amp;#x6e;&amp;#110;&amp;#111;&amp;#x78;&amp;#x2e;&amp;#x6e;&amp;#x65;&amp;#x74;&amp;#x40;&amp;#84;&amp;#x45;&amp;#x53;&amp;#84;&amp;#46;&amp;#x4a;&amp;#x41;&amp;#x4d;&amp;#73;&amp;#x45;&amp;#76;&amp;#69;&amp;#78;&amp;#78;&amp;#79;&amp;#88;&amp;#x2e;&amp;#78;&amp;#69;&amp;#84;&quot;&gt;&amp;#x6f;&amp;#x70;&amp;#x65;&amp;#x6e;&amp;#x73;&amp;#x74;&amp;#97;&amp;#99;&amp;#107;&amp;#x2e;&amp;#116;&amp;#x65;&amp;#115;&amp;#x74;&amp;#x2e;&amp;#106;&amp;#97;&amp;#109;&amp;#x69;&amp;#101;&amp;#x6c;&amp;#101;&amp;#110;&amp;#x6e;&amp;#111;&amp;#x78;&amp;#46;&amp;#x6e;&amp;#x65;&amp;#116;&amp;#x40;&amp;#84;&amp;#69;&amp;#x53;&amp;#x54;&amp;#x2e;&amp;#74;&amp;#65;&amp;#77;&amp;#73;&amp;#x45;&amp;#76;&amp;#x45;&amp;#78;&amp;#x4e;&amp;#x4f;&amp;#88;&amp;#46;&amp;#x4e;&amp;#69;&amp;#</span>84<span class="p">;</span>&lt;/a&gt; -k /etc/httpd/conf/httpd.keytab
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="gp">[root@openstack]# ipa service-add HTTP/&lt;a href=&quot;&amp;#109;&amp;#x61;&amp;#105;&amp;#x6c;&amp;#x74;&amp;#111;&amp;#x3a;&amp;#111;&amp;#x70;&amp;#101;&amp;#110;&amp;#115;&amp;#x74;&amp;#x61;&amp;#x63;&amp;#x6b;&amp;#46;&amp;#116;&amp;#x65;&amp;#x73;&amp;#x74;&amp;#x2e;&amp;#106;&amp;#97;&amp;#x6d;&amp;#105;&amp;#101;&amp;#108;&amp;#x65;&amp;#110;&amp;#x6e;&amp;#x6f;&amp;#x78;&amp;#46;&amp;#x6e;&amp;#101;&amp;#116;&amp;#64;&amp;#x54;&amp;#x45;&amp;#83;&amp;#x54;&amp;#x2e;&amp;#x4a;&amp;#65;&amp;#x4d;&amp;#73;&amp;#x45;&amp;#x4c;&amp;#69;&amp;#78;&amp;#78;&amp;#x4f;&amp;#88;&amp;#46;&amp;#x4e;&amp;#x45;&amp;#x54;&quot;&gt;&amp;#x6f;&amp;#112;&amp;#x65;&amp;#x6e;&amp;#x73;&amp;#116;&amp;#x61;&amp;#99;&amp;#x6b;&amp;#x2e;&amp;#116;&amp;#101;&amp;#115;&amp;#116;&amp;#x2e;&amp;#106;&amp;#x61;&amp;#109;&amp;#x69;&amp;#101;&amp;#x6c;&amp;#101;&amp;#110;&amp;#x6e;&amp;#x6f;&amp;#x78;&amp;#x2e;&amp;#x6e;&amp;#101;&amp;#116;&amp;#64;&amp;#84;&amp;#69;&amp;#x53;&amp;#x54;&amp;#46;&amp;#74;&amp;#65;&amp;#77;&amp;#x49;&amp;#x45;&amp;#x4c;&amp;#x45;&amp;#x4e;&amp;#x4e;&amp;#79;&amp;#x58;&amp;#x2e;&amp;#78;&amp;#69;&amp;#</span>x54<span class="p">;</span>&lt;/a&gt;
+</span><span class='line'><span class="gp">[root@openstack]# ipa-getkeytab -s ipa.test.jamielennox.net -p HTTP/&lt;a href=&quot;&amp;#x6d;&amp;#x61;&amp;#x69;&amp;#108;&amp;#116;&amp;#111;&amp;#58;&amp;#x6f;&amp;#x70;&amp;#101;&amp;#110;&amp;#x73;&amp;#x74;&amp;#x61;&amp;#99;&amp;#x6b;&amp;#x2e;&amp;#116;&amp;#x65;&amp;#115;&amp;#x74;&amp;#46;&amp;#x6a;&amp;#97;&amp;#109;&amp;#105;&amp;#101;&amp;#x6c;&amp;#101;&amp;#110;&amp;#110;&amp;#111;&amp;#x78;&amp;#x2e;&amp;#110;&amp;#x65;&amp;#x74;&amp;#64;&amp;#x54;&amp;#69;&amp;#x53;&amp;#x54;&amp;#x2e;&amp;#74;&amp;#65;&amp;#x4d;&amp;#x49;&amp;#69;&amp;#x4c;&amp;#69;&amp;#78;&amp;#78;&amp;#x4f;&amp;#88;&amp;#x2e;&amp;#x4e;&amp;#69;&amp;#x54;&quot;&gt;&amp;#111;&amp;#112;&amp;#x65;&amp;#110;&amp;#115;&amp;#x74;&amp;#x61;&amp;#x63;&amp;#107;&amp;#46;&amp;#x74;&amp;#x65;&amp;#x73;&amp;#116;&amp;#46;&amp;#106;&amp;#97;&amp;#x6d;&amp;#105;&amp;#x65;&amp;#x6c;&amp;#x65;&amp;#110;&amp;#x6e;&amp;#111;&amp;#x78;&amp;#x2e;&amp;#x6e;&amp;#101;&amp;#x74;&amp;#64;&amp;#84;&amp;#69;&amp;#x53;&amp;#84;&amp;#46;&amp;#74;&amp;#x41;&amp;#x4d;&amp;#x49;&amp;#x45;&amp;#x4c;&amp;#69;&amp;#78;&amp;#x4e;&amp;#x4f;&amp;#x58;&amp;#46;&amp;#78;&amp;#x45;&amp;#</span>x54<span class="p">;</span>&lt;/a&gt; -k /etc/httpd/conf/httpd.keytab
 </span><span class='line'><span class="go">[root@openstack]# chown apache: /etc/httpd/conf/httpd.keytab</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
@@ -1043,77 +1299,6 @@ In this case every request other than the first will get a 401 error:</li>
 
 
 <p>Patches and <a href="https://bugs.launchpad.net/requests-mock">bug reports</a> are welcome.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Git Commands for Messy People]]></title>
-    <link href="http://www.jamielennox.net/blog/2014/08/15/git-commands-for-messy-people/"/>
-    <updated>2014-08-15T10:59:00+10:00</updated>
-    <id>http://www.jamielennox.net/blog/2014/08/15/git-commands-for-messy-people</id>
-    <content type="html"><![CDATA[<p>I am terrible at keeping my git branches in order.
-Particularly since I work across multiple machines and forget where things are I will often have multiple branches with different names being different versions of the same review.</p>
-
-<p>On a project I work on frequently I currently have 71 local branches which are a mix of my code, some code reviews, and some branches that were for trialling ideas.
-<a href="https://pypi.python.org/pypi/git-review">git review</a> at least prefixes branches it downloads with <code>review/</code> but that doesn&rsquo;t help to figure out what was happening with local branches labelled <code>auth</code> through <code>auth-4</code>.</p>
-
-<p>However this post isn&rsquo;t about me fixing my terrible habit it&rsquo;s about two git commands which help me work with the mess.</p>
-
-<p>The first is an alias which I called <code>branch-date</code>:</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='ini'><span class='line'><span class="k">[alias]</span>
-</span><span class='line'>    <span class="na">branch-date</span> <span class="o">=</span> <span class="s">&amp;ldquo;!git for-each-ref &amp;ndash;sort=committerdate &amp;ndash;format=&amp;lsquo;%1B[32m%(committerdate:iso8601) %1B[34m%(committerdate:relative) %1B[0;m%(refname:short)&amp;rsquo; refs/heads/&amp;rdquo;</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>This gives a nicely formatted list of branches in the project sorted by the last time they were committed to and how long ago it was.
-So if I know I&rsquo;m looking for a branch that I last worked on last week I can quickly locate those branches.</p>
-
-<p><img class="&ldquo;basic-alignment center&rdquo;" src="/images/branch-date.png" title="&ldquo;Naming scheme win!&rdquo; &ldquo;List of branches ordered by date&rdquo;" ></p>
-
-<p>The next is a script to figure out which of my branches have made it through review and have been merged upstream which I called <code>branch-merged</code>.</p>
-
-<p>Using git you can already call <code>git branch --merged master</code> to determine which branches are fully merged into the <code>master</code> branch.
-However this won&rsquo;t take into account if a later version of a review was merged, in which case I can probably get rid of that branch.</p>
-
-<p>We can figure this out by using the <code>Commit-Id:</code> field of our Gerrit reviews.</p>
-
-<p><div><script src='https://gist.github.com/a7f8080e42ec795945b8.js?file=git-branch-merged.sh'></script>
-<noscript><pre><code>#!/bin/bash
-
-# create an associative array of all the changes
-declare -A MERGED
-for commit in `git log master | grep Change-Id | cut -d : -f 2`; do
-    MERGED[&quot;$commit&quot;]=1
-done
-
-for branch in `git branch | grep -v master`; do
-    found=1
-
-    # for every commit on the branch check to ensure its in master
-    for commit in `git log $branch | grep Change-Id | cut -d : -f 2`; do
-        if [[ ! ${MERGED[&quot;$commit&quot;]} ]]; then
-            # if it's not in master then this branch wasn't merged so we
-            # want to break out and not print its name.
-            found=0
-            break
-        fi
-    done
-
-    if [ $found = 1 ]; then
-        # if all of the Commit-Ids on branch were also in master then
-        # print out the branch name because we can probably get rid of it
-        echo $branch
-    fi
-done</code></pre></noscript></div>
-</p>
-
-<p>So print out the branches where all the <code>Commit-Id</code>s are also in master.
-It&rsquo;s not greatly efficient and if you are working with code bases with long histories you might need to limit the depth, but given that it doesn&rsquo;t run often it completes quickly enough.</p>
-
-<p>There&rsquo;s no guarantee that there wasn&rsquo;t something new in those branches, but most likely it was an earlier review or test code that is no longer relevant.
-I was considering a tool that could use the <code>Commit-Id</code> to figure out from gerrit if a branch is an exact match to one that was previously up for review and so contained no possibly useful experimenting code, but teaching myself to clean up branches as I go is probably a better use of my time.</p>
 ]]></content>
   </entry>
   

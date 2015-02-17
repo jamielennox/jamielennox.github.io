@@ -9,7 +9,8 @@
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="Authentication plugins in Keystoneclient have gotten to the point where they are sufficiently well deployed that we can start to do interesting &hellip;">
+  <meta name="description" content="I&rsquo;ve been pushing a lot on the authentication plugins aspect of keystoneclient recently.
+They allow us to generalize the process of getting a &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -90,6 +91,408 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/02/17/loading-authentication-plugins/">Loading Authentication Plugins</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-02-17T09:08:03+11:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>17</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>9:08 am</span></time>
+        
+         | <a href="/blog/2015/02/17/loading-authentication-plugins/#disqus_thread">Comments</a>
+        
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I&rsquo;ve been pushing a lot on the authentication plugins aspect of keystoneclient recently.
+They allow us to generalize the process of getting a token from OpenStack such that we can enable new mechanisms like <a href="https://github.com/openstack/python-keystoneclient-kerberos">Kerberos</a> or client certificate authentication - without having to modify all the clients.</p>
+
+<p>For most people hardcoding credentials into scripts is not an option, both for security and for reusability reasons.
+By having a standard loading mechanism for this selection of new plugins we can ensure that applications we write can be used with future plugins.
+I am currently working on getting this method into the existing services to allow for more extensible service authentication, so this pattern should become more common in future.</p>
+
+<p>There are two loading mechanisms for authentication plugins provided by keystoneclient:</p>
+
+<ul>
+<li>Loading from an <a href="http://docs.openstack.org/developer/oslo.config">oslo.config</a> CONF object.</li>
+<li>Loading from an <a href="https://docs.python.org/2/library/argparse.html">argparse</a> command line</li>
+</ul>
+
+
+<h2>Loading from CONF</h2>
+
+<p>We can define a plugin from CONF like:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ini'><span class='line'><span class="k">[somegroup]</span>
+</span><span class='line'><span class="na">auth_plugin</span> <span class="o">=</span> <span class="s">v3password</span>
+</span><span class='line'><span class="na">auth_url</span> <span class="o">=</span> <span class="s">http://keystone.test:5000/v3</span>
+</span><span class='line'><span class="na">username</span> <span class="o">=</span> <span class="s">user</span>
+</span><span class='line'><span class="na">password</span> <span class="o">=</span> <span class="s">pass</span>
+</span><span class='line'><span class="na">user_domain_name</span> <span class="o">=</span> <span class="s">domain</span>
+</span><span class='line'><span class="na">project_name</span> <span class="o">=</span> <span class="s">proj</span>
+</span><span class='line'><span class="na">project_domain_name</span> <span class="o">=</span> <span class="s">domain</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The initially required field here is <code>auth_plugin</code> which specifies the name of the plugin to load.
+All other parameters in that section are dependant on the information that plugin (in this case v3password) requires.</p>
+
+<p>To load that plugin from an application we do:</p>
+
+<div><script src='https://gist.github.com/3b26bfb8e80fa48133e9.js?file=test-conf.py'></script>
+<noscript><pre><code>import sys
+
+from keystoneclient import auth
+from keystoneclient import session
+from oslo.config import cfg
+
+cfg.CONF(sys.argv[1:])
+
+auth.register_conf_options(cfg.CONF, 'somegroup')
+session.Session.register_conf_options(cfg.CONF, 'somegroup')
+
+plugin = auth.load_from_conf_options(cfg.CONF, 'somegroup')
+sess = session.Session.load_from_conf_options(cfg.CONF,
+                                              'somegroup',
+                                              auth=plugin)
+</code></pre></noscript></div>
+
+
+<p>Then create <code>novaclient</code>, <code>cinderclient</code> or whichever client you wish to talk to with that session as normal.</p>
+
+<p>You can also use an <code>auth_section</code> parameter to specify a different group in which the authentication credentials are stored.
+This allows you to reuse the same credentials in multiple places throughout your configuration file without copying and pasting.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ini'><span class='line'><span class="k">[somegroup]</span>
+</span><span class='line'><span class="na">auth_section</span> <span class="o">=</span> <span class="s">credentials</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">[othergroup]</span>
+</span><span class='line'><span class="na">auth_section</span> <span class="o">=</span> <span class="s">credentials</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">[credentials]</span>
+</span><span class='line'><span class="na">auth_plugin</span> <span class="o">=</span> <span class="s">v3password</span>
+</span><span class='line'><span class="na">auth_url</span> <span class="o">=</span> <span class="s">http://keystone.test:5000/v3</span>
+</span><span class='line'><span class="na">username</span> <span class="o">=</span> <span class="s">user</span>
+</span><span class='line'><span class="na">password</span> <span class="o">=</span> <span class="s">pass</span>
+</span><span class='line'><span class="na">user_domain_name</span> <span class="o">=</span> <span class="s">domain</span>
+</span><span class='line'><span class="na">project_name</span> <span class="o">=</span> <span class="s">proj</span>
+</span><span class='line'><span class="na">project_domain_name</span> <span class="o">=</span> <span class="s">domain</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above loading code for <code>[somegroup]</code> or <code>[othergroup]</code> will load separate instances of the same authentication plugin.</p>
+
+<h2>Loading from the command line</h2>
+
+<p>The options present on the command line are very similar to that presented via the config file, and follow a pattern familiar to the existing openstack CLI applications.
+The equivalent options as specified in the config above would be presented as:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>./myapp --os-auth-plugin v3password <span class="se">\</span>
+</span><span class='line'>        --os-auth-url http://keystone.test:5000/v3 <span class="se">\</span>
+</span><span class='line'>        --os-username user <span class="se">\</span>
+</span><span class='line'>        --os-password pass <span class="se">\</span>
+</span><span class='line'>        --os-user-domain-name domain <span class="se">\</span>
+</span><span class='line'>        --os-project-name proj <span class="se">\</span>
+</span><span class='line'>        --os-project-domain-name domain
+</span><span class='line'>        <span class="nb">command</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Or</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">export </span><span class="nv">OS_AUTH_PLUGIN</span><span class="o">=</span>v3password
+</span><span class='line'><span class="nb">export </span><span class="nv">OS_AUTH_URL</span><span class="o">=</span>http://keystone.test:5000/v3
+</span><span class='line'><span class="nb">export </span><span class="nv">OS_USERNAME</span><span class="o">=</span>user
+</span><span class='line'><span class="nb">export </span><span class="nv">OS_PASSWORD</span><span class="o">=</span>pass
+</span><span class='line'><span class="nb">export </span><span class="nv">OS_USER_DOMAIN_NAME</span><span class="o">=</span>domain
+</span><span class='line'><span class="nb">export </span><span class="nv">OS_PROJECT_NAME</span><span class="o">=</span>proj
+</span><span class='line'><span class="nb">export </span><span class="nv">OS_PROJECT_DOMAIN_NAME</span><span class="o">=</span>domain
+</span><span class='line'>
+</span><span class='line'>./myapp <span class="nb">command</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is loaded from python via:</p>
+
+<div><script src='https://gist.github.com/4e22049c5bc57f4b68ec.js?file=test-cli.py'></script>
+<noscript><pre><code>import argparse
+import sys
+
+from keystoneclient import auth
+from keystoneclient import session
+
+parser = argparse.ArgumentParser('myapp')
+
+auth.register_argparse_arguments(parser, sys.argv[1:])
+session.Session.register_cli_options(parser)
+
+args = parser.parse_args()
+
+plugin = auth.load_from_argparse_arguments(args)
+sess = session.Session.load_from_cli_options(args, auth=plugin)
+</code></pre></noscript></div>
+
+
+<p><strong>NOTE</strong>: I am aware that the syntax is wonky with the command for session loading and auth plugin loading different.
+This was one of those things that was &lsquo;optimized&rsquo; between reviews and managed to slip through.
+There is a review out to standardize this.</p>
+
+<p>This will also set <code>--help</code> appropriately, so if you are unsure of the arguments that this particular authentication plugin takes you can do:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>./myapp --os-auth-plugin v3password --help
+</span><span class='line'>
+</span><span class='line'>usage: myapp <span class="o">[</span>-h<span class="o">]</span> <span class="o">[</span>--os-auth-plugin &lt;name&gt;<span class="o">]</span> <span class="o">[</span>--os-auth-url OS_AUTH_URL<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-domain-id OS_DOMAIN_ID<span class="o">]</span> <span class="o">[</span>--os-domain-name OS_DOMAIN_NAME<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-project-id OS_PROJECT_ID<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-project-name OS_PROJECT_NAME<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-project-domain-id OS_PROJECT_DOMAIN_ID<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-project-domain-name OS_PROJECT_DOMAIN_NAME<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-trust-id OS_TRUST_ID<span class="o">]</span> <span class="o">[</span>--os-user-id OS_USER_ID<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-user-name OS_USERNAME<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-user-domain-id OS_USER_DOMAIN_ID<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-user-domain-name OS_USER_DOMAIN_NAME<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-password OS_PASSWORD<span class="o">]</span> <span class="o">[</span>--insecure<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-cacert &lt;ca-certificate&gt;<span class="o">]</span> <span class="o">[</span>--os-cert &lt;certificate&gt;<span class="o">]</span>
+</span><span class='line'>             <span class="o">[</span>--os-key &lt;key&gt;<span class="o">]</span> <span class="o">[</span>--timeout &lt;seconds&gt;<span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'>optional arguments:
+</span><span class='line'>  -h, --help            show this <span class="nb">help </span>message and <span class="nb">exit</span>
+</span><span class='line'>  --os-auth-plugin &lt;name&gt;
+</span><span class='line'>                        The auth plugin to load
+</span><span class='line'>  --insecure            Explicitly allow client to perform <span class="s2">&quot;insecure&quot;</span> TLS
+</span><span class='line'>                        <span class="o">(</span>https<span class="o">)</span> requests. The server<span class="s1">&#39;s certificate will not be</span>
+</span><span class='line'><span class="s1">                        verified against any certificate authorities. This</span>
+</span><span class='line'><span class="s1">                        option should be used with caution.</span>
+</span><span class='line'><span class="s1">  --os-cacert &lt;ca-certificate&gt;</span>
+</span><span class='line'><span class="s1">                        Specify a CA bundle file to use in verifying a TLS</span>
+</span><span class='line'><span class="s1">                        (https) server certificate. Defaults to</span>
+</span><span class='line'><span class="s1">                        env[OS_CACERT].</span>
+</span><span class='line'><span class="s1">  --os-cert &lt;certificate&gt;</span>
+</span><span class='line'><span class="s1">                        Defaults to env[OS_CERT].</span>
+</span><span class='line'><span class="s1">  --os-key &lt;key&gt;        Defaults to env[OS_KEY].</span>
+</span><span class='line'><span class="s1">  --timeout &lt;seconds&gt;   Set request timeout (in seconds).</span>
+</span><span class='line'>
+</span><span class='line'><span class="s1">Authentication Options:</span>
+</span><span class='line'><span class="s1">  Options specific to the v3password plugin.</span>
+</span><span class='line'>
+</span><span class='line'><span class="s1">  --os-auth-url OS_AUTH_URL</span>
+</span><span class='line'><span class="s1">                        Authentication URL</span>
+</span><span class='line'><span class="s1">  --os-domain-id OS_DOMAIN_ID</span>
+</span><span class='line'><span class="s1">                        Domain ID to scope to</span>
+</span><span class='line'><span class="s1">  --os-domain-name OS_DOMAIN_NAME</span>
+</span><span class='line'><span class="s1">                        Domain name to scope to</span>
+</span><span class='line'><span class="s1">  --os-project-id OS_PROJECT_ID</span>
+</span><span class='line'><span class="s1">                        Project ID to scope to</span>
+</span><span class='line'><span class="s1">  --os-project-name OS_PROJECT_NAME</span>
+</span><span class='line'><span class="s1">                        Project name to scope to</span>
+</span><span class='line'><span class="s1">  --os-project-domain-id OS_PROJECT_DOMAIN_ID</span>
+</span><span class='line'><span class="s1">                        Domain ID containing project</span>
+</span><span class='line'><span class="s1">  --os-project-domain-name OS_PROJECT_DOMAIN_NAME</span>
+</span><span class='line'><span class="s1">                        Domain name containing project</span>
+</span><span class='line'><span class="s1">  --os-trust-id OS_TRUST_ID</span>
+</span><span class='line'><span class="s1">                        Trust ID</span>
+</span><span class='line'><span class="s1">  --os-user-id OS_USER_ID</span>
+</span><span class='line'><span class="s1">                        User ID</span>
+</span><span class='line'><span class="s1">  --os-user-name OS_USERNAME, --os-username OS_USERNAME</span>
+</span><span class='line'><span class="s1">                        Username</span>
+</span><span class='line'><span class="s1">  --os-user-domain-id OS_USER_DOMAIN_ID</span>
+</span><span class='line'><span class="s1">                        User&#39;</span>s domain id
+</span><span class='line'>  --os-user-domain-name OS_USER_DOMAIN_NAME
+</span><span class='line'>                        User<span class="s1">&#39;s domain name</span>
+</span><span class='line'><span class="s1">  --os-password OS_PASSWORD</span>
+</span><span class='line'><span class="s1">                        User&#39;</span>s password
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To prevent polluting your CLI&rsquo;s help only the &lsquo;Authentication Options&rsquo; for the plugin you specified by &lsquo;&ndash;os-auth-plugin&rsquo; are added to the help.</p>
+
+<p>Having explained all this one of the primary application currently embracing authentication plugins, <a href="https://github.com/openstack/python-openstackclient">openstackclient</a>, currently handles its options slightly differently and you will need to use <code>--os-auth-type</code> instead of <code>--os-auth-plugin</code></p>
+
+<h2>Available plugins</h2>
+
+<p>The <a href="http://docs.openstack.org/developer/python-keystoneclient/authentication-plugins.html">documentation</a> for plugins provides basic features and parameters however it&rsquo;s not always going to be up to date with all options, especially for plugins not handled within keystoneclient.
+The following is a fairly simple script that lists all the plugins that are installed on the system and their options.</p>
+
+<div><script src='https://gist.github.com/7f5cfabd64a6922e643c.js?file=list-plugins.py'></script>
+<noscript><pre><code>import stevedore
+
+mgr = stevedore.ExtensionManager(namespace='keystoneclient.auth.plugin',
+                                 invoke_on_load=False)
+
+def print_plugin(ext):
+    print &quot;%s:&quot; % ext.entry_point.name
+
+    for opt in ext.plugin.get_options():
+        print &quot;    %s: %s&quot; % (opt.name, opt.help)
+
+mgr.map(print_plugin)
+</code></pre></noscript></div>
+
+
+<p>Which for the <code>v3password</code> plugin we&rsquo;ve been using returns:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>...
+</span><span class='line'>v3password:
+</span><span class='line'>    auth-url: Authentication URL
+</span><span class='line'>    domain-id: Domain ID to scope to
+</span><span class='line'>    domain-name: Domain name to scope to
+</span><span class='line'>    project-id: Project ID to scope to
+</span><span class='line'>    project-name: Project name to scope to
+</span><span class='line'>    project-domain-id: Domain ID containing project
+</span><span class='line'>    project-domain-name: Domain name containing project
+</span><span class='line'>    trust-id: Trust ID
+</span><span class='line'>    user-id: User ID
+</span><span class='line'>    user-name: Username
+</span><span class='line'>    user-domain-id: User<span class="s1">&#39;s domain id</span>
+</span><span class='line'><span class="s1">    user-domain-name: User&#39;</span>s domain name
+</span><span class='line'>    password: User<span class="err">&#39;</span>s password
+</span><span class='line'>...
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From that it&rsquo;s pretty simple to determine the correct format for parameters.</p>
+
+<ul>
+<li>When using the CLI you should prefix <code>--os-</code>, e.g. <code>auth-url</code> becomes <code>--os-auth-url</code>.</li>
+<li>Environment variables are upper-cased, and prefix <code>OS_</code> and replace <code>-</code> with <code>_</code>, e.g. <code>auth-url</code> becomes <code>OS_AUTH_URL</code>.</li>
+<li>Conf file variables replace <code>-</code> with <code>_</code> eg. <code>auth-url</code> becomes <code>auth_url</code>.</li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1313,61 +1716,6 @@ The only currently available value here is <code>kerberos</code> indicating that
 <p>For a deployment with access to a Kerberos or x509 infrastructure token binding will dramatically increase your user&rsquo;s security.
 Unfortunately the limitations of Kerberos within OpenStack don&rsquo;t really make this a viable deployment option in Havana.
 Watch this space however as we add x509 authentication and binding, and improve Kerberos handling throughout.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/09/30/keystone-with-httpd-in-devstack/">Keystone With HTTPd in Devstack</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2013-09-30T13:53:00+10:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>30</span><span class='date-suffix'>th</span>, <span class='date-year'>2013</span></span> <span class='time'>1:53 pm</span></time>
-        
-         | <a href="/blog/2013/09/30/keystone-with-httpd-in-devstack/#disqus_thread">Comments</a>
-        
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Keystone has been slowly pushing away from being deployed with <a href="http://eventlet.net">Eventlet</a> and the <code>keystone-all</code> script in favour of the more traditional httpd mod_wsgi application method.
-There has been discussion of Eventlet&rsquo;s place in OpenStack <a href="http://davidhadas.wordpress.com/2012/05/14/asynchronousio/">before</a> and its (mis)use has led to numerous subtle bugs and problems, however from my opinion in Keystone the most important reasons to move away from Eventlet are:</p>
-
-<ul>
-<li>Eventlet does not support Kerberos authentication.</li>
-<li>pyOpenSSL only releases the GIL around some SSL verification commands.
-This leads to a series of hacks to prevent long running crypto commands blocking Eventlet threads and thus the entire Keystone process.</li>
-<li>There are already a lot of httpd authentication/authorization plugins that we could make use of in Keystone.</li>
-<li>It&rsquo;s faster to have things handled by httpd modules in C than in Python.</li>
-</ul>
-
-
-<p>Keystone has shipped with sample WSGI scripts and httpd configuration files since Foslom and documentation for how to use them <a href="http://docs.openstack.org/developer/keystone/apache-httpd.html">is available</a> however most guides and service wrappers (upstart, systemd etc) will use the <code>keystone-all</code> method.</p>
-
-<p>To get some wider adoption and understanding of the process I&rsquo;ve just added Keystone with httpd support into devstack.
-Simply set:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>APACHE_ENABLED_SERVICES=key</span></code></pre></td></tr></table></div></figure>
-
-
-<p>in your localrc or environment variables and re-run <code>./stack.sh</code> to try it out.</p>
-
-<p>P.S. Swift can also be deployed this way by adding <code>swift</code> to the (comma separated) services list.</p>
 </div>
   
   
