@@ -72,7 +72,7 @@ history: https://github.com/jamielennox/jamielennox.github.io/commits/source/sou
 # Github repositories
 github_user: jamielennox
 github_repo_count: 0
-github_show_profile_link: false
+github_show_profile_link: true
 github_skip_forks: true
 
 # Twitter
@@ -105,3 +105,6 @@ google_analytics_tracking_id: "UA-44372550-1"
 
 # Facebook Like
 facebook_like: false
+
+twitter_user: jamielennox_
+linkedin_user: jamielennox
