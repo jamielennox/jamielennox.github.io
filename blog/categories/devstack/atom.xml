@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Devstack | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/devstack/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2015-02-23T11:05:27+11:00</updated>
+  <updated>2015-02-23T13:22:08+11:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -18,24 +18,28 @@
     <link href="http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack/"/>
     <updated>2013-09-30T13:53:00+10:00</updated>
     <id>http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack</id>
-    <content type="html"><![CDATA[Keystone has been slowly pushing away from being deployed with [Eventlet](http://eventlet.net) and the ``keystone-all`` script in favour of the more traditional httpd mod\_wsgi application method.
-There has been discussion of Eventlet's place in OpenStack [before](http://davidhadas.wordpress.com/2012/05/14/asynchronousio/) and its (mis)use has led to numerous subtle bugs and problems, however from my opinion in Keystone the most important reasons to move away from Eventlet are:
+    <content type="html"><![CDATA[<p>Keystone has been slowly pushing away from being deployed with <a href="http://eventlet.net">Eventlet</a> and the <code>keystone-all</code> script in favour of the more traditional httpd mod_wsgi application method.
+There has been discussion of Eventlet&rsquo;s place in OpenStack <a href="http://davidhadas.wordpress.com/2012/05/14/asynchronousio/">before</a> and its (mis)use has led to numerous subtle bugs and problems, however from my opinion in Keystone the most important reasons to move away from Eventlet are:</p>
 
-* Eventlet does not support Kerberos authentication.
-* pyOpenSSL only releases the GIL around some SSL verification commands.
-  This leads to a series of hacks to prevent long running crypto commands blocking Eventlet threads and thus the entire Keystone process.
-* There are already a lot of httpd authentication/authorization plugins that we could make use of in Keystone.
-* It's faster to have things handled by httpd modules in C than in Python.
+<ul>
+<li>Eventlet does not support Kerberos authentication.</li>
+<li>pyOpenSSL only releases the GIL around some SSL verification commands.
+This leads to a series of hacks to prevent long running crypto commands blocking Eventlet threads and thus the entire Keystone process.</li>
+<li>There are already a lot of httpd authentication/authorization plugins that we could make use of in Keystone.</li>
+<li>It&rsquo;s faster to have things handled by httpd modules in C than in Python.</li>
+</ul>
 
-Keystone has shipped with sample WSGI scripts and httpd configuration files since Foslom and documentation for how to use them [is available](http://docs.openstack.org/developer/keystone/apache-httpd.html) however most guides and service wrappers (upstart, systemd etc) will use the ``keystone-all`` method.
 
-To get some wider adoption and understanding of the process I've just added Keystone with httpd support into devstack.
+<p>Keystone has shipped with sample WSGI scripts and httpd configuration files since Foslom and documentation for how to use them <a href="http://docs.openstack.org/developer/keystone/apache-httpd.html">is available</a> however most guides and service wrappers (upstart, systemd etc) will use the <code>keystone-all</code> method.</p>
+
+<p>To get some wider adoption and understanding of the process I&rsquo;ve just added Keystone with httpd support into devstack.
 Simply set:
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>APACHE_ENABLED_SERVICES=key</span></code></pre></td></tr></table></div></figure>
-in your localrc or environment variables and re-run &#8220;./stack.sh&#8220; to try it out.
+<code>
+APACHE_ENABLED_SERVICES=key
+</code>
+in your localrc or environment variables and re-run <code>./stack.sh</code> to try it out.</p>
 
-P.S. Swift can also be deployed this way by adding &#8220;swift&#8220; to the (comma separated) services list.
+<p>P.S. Swift can also be deployed this way by adding <code>swift</code> to the (comma separated) services list.</p>
 ]]></content>
   </entry>
   
