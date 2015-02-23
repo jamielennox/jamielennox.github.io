@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Kerberos | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/kerberos/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2015-02-21T15:00:52+11:00</updated>
+  <updated>2015-02-23T11:05:27+11:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -18,72 +18,62 @@
     <link href="http://www.jamielennox.net/blog/2015/02/12/step-by-step-kerberized-keystone/"/>
     <updated>2015-02-12T17:20:42+11:00</updated>
     <id>http://www.jamielennox.net/blog/2015/02/12/step-by-step-kerberized-keystone</id>
-    <content type="html"><![CDATA[<p>Authentication plugins in Keystoneclient have gotten to the point where they are sufficiently well deployed that we can start to do interesting additional forms of authentication.
+    <content type="html"><![CDATA[Authentication plugins in Keystoneclient have gotten to the point where they are sufficiently well deployed that we can start to do interesting additional forms of authentication.
 As Kerberos is a commonly requested authentication mechanism here is a simple, single domain keystone setup using Kerberos authentication.
-They are not necessarily how you would setup a production deployment, but should give you the information you need to configure that yourself.</p>
+They are not necessarily how you would setup a production deployment, but should give you the information you need to configure that yourself.
 
-<p>They create:</p>
+They create:
 
-<ul>
-<li>A <a href="https://www.freeipa.org">FreeIPA</a> server machine called <code>ipa.test.jamielennox.net</code></li>
-<li>A <a href="https://openstack.redhat.com/Quickstart">Packstack</a> all in one deployment of OpenStack called <code>openstack.test.jamielennox.net</code></li>
-</ul>
-
+ - A [FreeIPA](https://www.freeipa.org) server machine called `ipa.test.jamielennox.net`
+ - A [Packstack](https://openstack.redhat.com/Quickstart) all in one deployment of OpenStack called `openstack.test.jamielennox.net`
 
 <!-- more -->
 
+Notes:
 
-<p>Notes:</p>
+ - I use the realm `TEST.JAMIELENNOX.NET`. There is no meaning to this domain, it doesn&#8217;t exist or make any difference to the deployment.
+ - I am using a single domain deployment, so regular users and service users are intermingled.
+   There is no great benefit to this because the Kerberos plugin only supports the Keystone v3 API (so you have to be domain aware), however it a couple of steps.
+   Generally when doing a deployment like this I would put the IPA users in there own domain.
 
-<ul>
-<li>I use the realm <code>TEST.JAMIELENNOX.NET</code>. There is no meaning to this domain, it doesn&rsquo;t exist or make any difference to the deployment.</li>
-<li>I am using a single domain deployment, so regular users and service users are intermingled.
-There is no great benefit to this because the Kerberos plugin only supports the Keystone v3 API (so you have to be domain aware), however it a couple of steps.
-Generally when doing a deployment like this I would put the IPA users in there own domain.</li>
-</ul>
+Disclaimer:
 
+ - The goal of Kerberos authentication is obviously to enable both the command line and horizon interfaces to use your existing Kerberos ticket.
+   At the time of writing the [openstackclient](http://docs.openstack.org/developer/python-openstackclient/) is really the only client capable of using plugins.
+   I am also [working](https://review.openstack.org/#/c/153910/) [on](https://review.openstack.org/#/c/153174/) the patches required to enable horizon for SSO.
+   There are obviously no promises that will be ready and accepted for the Kilo release, but I&#8217;m hoping so.
 
-<p>Disclaimer:</p>
+##Part 1 - Install FreeIPA
 
-<ul>
-<li>The goal of Kerberos authentication is obviously to enable both the command line and horizon interfaces to use your existing Kerberos ticket.
-At the time of writing the <a href="http://docs.openstack.org/developer/python-openstackclient/">openstackclient</a> is really the only client capable of using plugins.
-I am also <a href="https://review.openstack.org/#/c/153910/">working</a> <a href="https://review.openstack.org/#/c/153174/">on</a> the patches required to enable horizon for SSO.
-There are obviously no promises that will be ready and accepted for the Kilo release, but I&rsquo;m hoping so.</li>
-</ul>
+From a brand new centos 7 image:
 
-
-<h2>Part 1 - Install FreeIPA</h2>
-
-<p>From a brand new centos 7 image:</p>
-
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@ipa]# yum update -y</span>
 </span><span class='line'><span class="go">[root@ipa]# hostnamectl set-hostname ipa.test.jamielennox.net</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Now install the FreeIPA server.</p>
+Now install the FreeIPA server.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@ipa]# yum install ipa-server bind-dyndb-ldap -y</span>
 </span><span class='line'><span class="go">[root@ipa]# ipa-server-install</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>I&rsquo;ve ignored the details here, generally having correctly set the hostname the defaults are correct for me, the only thing I generally do is opt to configuring bind for DNS.
-This is the reason for installing <code>bind-dyndb-ldap</code> and you can skip it if you don&rsquo;t install bind, however you will need to edit your <code>/etc/hosts</code> file for the IPA server for the other machines as IPA relies on hostnames.</p>
+I&#8217;ve ignored the details here, generally having correctly set the hostname the defaults are correct for me, the only thing I generally do is opt to configuring bind for DNS.
+This is the reason for installing `bind-dyndb-ldap` and you can skip it if you don&#8217;t install bind, however you will need to edit your `/etc/hosts` file for the IPA server for the other machines as IPA relies on hostnames.
 
-<p>Pay particular attention to the username you give to the <code>admin</code> user as this user will be used from keystone later.
+Pay particular attention to the username you give to the `admin` user as this user will be used from keystone later.
 If you are unfamiliar with FreeIPA I suggest you test out the web interface, this is where your users will be registered.
-As FreeIPA expects to be on a routable address you will need to add the hostname to <code>/etc/hosts</code> of the client machine to use the web service.</p>
+As FreeIPA expects to be on a routable address you will need to add the hostname to `/etc/hosts` of the client machine to use the web service.
 
-<h2>Part 2 - Register as a FreeIPA Client</h2>
+##Part 2 - Register as a FreeIPA Client
 
-<p>The first thing I like to do is register the machine as a FreeIPA client machine.
-After registering the machine comes available for us to fetch Kerberos tickets from (and SSL certs, etc).</p>
+The first thing I like to do is register the machine as a FreeIPA client machine.
+After registering the machine comes available for us to fetch Kerberos tickets from (and SSL certs, etc).
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -93,54 +83,54 @@ After registering the machine comes available for us to fetch Kerberos tickets f
 </span><span class='line'><span class="gp">[root@openstack]# vim /etc/resolv.conf  #</span> and update your DNS server IP of the ipa machine.
 </span><span class='line'><span class="go">[root@openstack]# yum install ipa-client -y</span>
 </span><span class='line'><span class="go">[root@openstack]# ipa-client-install</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Again, having correctly set a hostname and DNS server the default options are correct for me.
-You&rsquo;ll need to provide the admin user and password from setting up the FreeIPA server.</p>
+Again, having correctly set a hostname and DNS server the default options are correct for me.
+You&#8217;ll need to provide the admin user and password from setting up the FreeIPA server.
 
-<h2>Part 3 - Install Packstack</h2>
+##Part 3 - Install Packstack
 
-<p>Packstack is a series of wrappers around the upstream puppet scripts that integrates well with RHEL/Centos, it will deploy the latest packaged version which is currently Juno.
-You could use devstack or any alternative deployment here.</p>
+Packstack is a series of wrappers around the upstream puppet scripts that integrates well with RHEL/Centos, it will deploy the latest packaged version which is currently Juno.
+You could use devstack or any alternative deployment here.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 </pre></td><td class='code'><pre><code class='console'><span class='line'><span class="gp">[root@openstack]# setenforce 0  #</span> :<span class="o">(</span>
-</span><span class='line'><span class="go">[root@openstack]# yum install -y &lt;a href=&quot;https://rdo.fedorapeople.org/rdo-release.rpm&quot;&gt;https://rdo.fedorapeople.org/rdo-release.rpm&lt;/a&gt;</span>
+</span><span class='line'><span class="go">[root@openstack]# yum install -y https://rdo.fedorapeople.org/rdo-release.rpm</span>
 </span><span class='line'><span class="go">[root@openstack]# yum install -y openstack-packstack</span>
-</span><span class='line'><span class="go">[root@openstack]# packstack &amp;ndash;allinone</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span><span class='line'><span class="go">[root@openstack]# packstack --allinone</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>The <code>--allinone</code> option configures the entire OpenStack deployment on this machine, see <a href="https://openstack.redhat.com/Docs">the docs</a> for more detailed deployments methods.</p>
+The `&#8211;allinone` option configures the entire OpenStack deployment on this machine, see [the docs](https://openstack.redhat.com/Docs) for more detailed deployments methods.
 
-<h2>Part 4 - Convert Keystone to Apache</h2>
+##Part 4 - Convert Keystone to Apache
 
-<p>To use kerberos authentication the keystone server uses the <code>mod_auth_kerb</code> Apache module. We therefore need to run the keystone server within Apache rather than from the script.
-Ideally here we would have generated an answer file and told Packstack to use the <code>httpd</code> deployment method (which it can do) however this never seems to work for me, so I&rsquo;ll do it manually. YMMV.</p>
+To use kerberos authentication the keystone server uses the `mod_auth_kerb` Apache module. We therefore need to run the keystone server within Apache rather than from the script.
+Ideally here we would have generated an answer file and told Packstack to use the `httpd` deployment method (which it can do) however this never seems to work for me, so I&#8217;ll do it manually. YMMV.
 
-<p>Stop the existing keystone server and prevent it starting on boot:</p>
+Stop the existing keystone server and prevent it starting on boot:
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@openstack]# systemctl stop openstack-keystone</span>
 </span><span class='line'><span class="go">[root@openstack]# systemctl disable openstack-keystone</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>There are many ways you could setup keystone within Apache. I don&rsquo;t think the <a href="http://docs.openstack.org/developer/keystone/apache-httpd.html">official docs</a> explain this very well but you can deploy it as you would any other <code>mod_wsgi</code> python site.</p>
+There are many ways you could setup keystone within Apache. I don&#8217;t think the [official docs](http://docs.openstack.org/developer/keystone/apache-httpd.html) explain this very well but you can deploy it as you would any other `mod_wsgi` python site.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 </pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@openstack]# mkdir /var/www/keystone</span>
 </span><span class='line'><span class="go">[root@openstack]# ln -s /usr/share/keystone/keystone.wsgi /var/www/keystone/admin</span>
 </span><span class='line'><span class="go">[root@openstack]# ln -s /usr/share/keystone/keystone.wsgi /var/www/keystone/main</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>This is the httpd config file I used initially:</p>
+This is the httpd config file I used initially:
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -183,87 +173,87 @@ Ideally here we would have generated an answer file and told Packstack to use th
 <span class='line-number'>41</span>
 <span class='line-number'>42</span>
 </pre></td><td class='code'><pre><code class='apache'><span class='line'><span class="nb">Listen</span> <span class="m">5000</span>
-</span><span class='line'><span class="nb">Listen</span> <span class="m">35357</span>&lt;/p&gt;
+</span><span class='line'><span class="nb">Listen</span> <span class="m">35357</span>
 </span><span class='line'>
-</span><span class='line'><span class="nt">&lt;p&gt;&lt;VirtualHost</span> <span class="s">*:5000</span><span class="nt">&gt;</span>
-</span><span class='line'>  <span class="nb">ServerName</span> openstack.test.jamielennox.net&lt;/p&gt;
+</span><span class='line'><span class="nt">&lt;VirtualHost</span> <span class="s">*:5000</span><span class="nt">&gt;</span>
+</span><span class='line'>  <span class="nb">ServerName</span> openstack.test.jamielennox.net
 </span><span class='line'>
-</span><span class='line'><span class="nt">&lt;p&gt;</span>  <span class="nb">DocumentRoot</span> &amp;ldquo;/var/www/keystone&amp;rdquo;&lt;/p&gt;
+</span><span class='line'>  <span class="nb">DocumentRoot</span> <span class="s2">&quot;/var/www/keystone&quot;</span>
 </span><span class='line'>
-</span><span class='line'><span class="nt">&lt;p&gt;</span>  <span class="nt">&lt;Directory</span> <span class="s">&quot;/var/www/keystone&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;Directory</span> <span class="s">&quot;/var/www/keystone&quot;</span><span class="nt">&gt;</span>
 </span><span class='line'>    <span class="nb">Options</span> Indexes FollowSymLinks MultiViews
 </span><span class='line'>    <span class="nb">AllowOverride</span> <span class="k">None</span>
 </span><span class='line'>    <span class="nb">Require</span> <span class="k">all</span> granted
-</span><span class='line'>  <span class="nt">&lt;/Directory&gt;&lt;/p&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/Directory&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="nt">&lt;p&gt;</span>  <span class="c">## Logging</span>
-</span><span class='line'>  <span class="nb">ErrorLog</span> &amp;ldquo;/var/log/httpd/keystone_wsgi_main_error.log&amp;rdquo;
+</span><span class='line'>  <span class="c">## Logging</span>
+</span><span class='line'>  <span class="nb">ErrorLog</span> <span class="s2">&quot;/var/log/httpd/keystone_wsgi_main_error.log&quot;</span>
 </span><span class='line'>  <span class="nb">ServerSignature</span> <span class="k">Off</span>
-</span><span class='line'>  <span class="nb">CustomLog</span> &amp;ldquo;/var/log/httpd/keystone_wsgi_main_access.log&amp;rdquo; combined
+</span><span class='line'>  <span class="nb">CustomLog</span> <span class="s2">&quot;/var/log/httpd/keystone_wsgi_main_access.log&quot;</span> combined
 </span><span class='line'>  <span class="nb">WSGIDaemonProcess</span> keystone_main <span class="k">group</span>=keystone processes=1 threads=4 <span class="k">user</span>=keystone
 </span><span class='line'>  <span class="nb">WSGIProcessGroup</span> keystone_main
-</span><span class='line'>  <span class="nb">WSGIScriptAlias</span> / &amp;ldquo;/var/www/keystone/main&amp;rdquo;
-</span><span class='line'><span class="nt">&lt;/VirtualHost&gt;&lt;/p&gt;</span>
+</span><span class='line'>  <span class="nb">WSGIScriptAlias</span> / <span class="s2">&quot;/var/www/keystone/main&quot;</span>
+</span><span class='line'><span class="nt">&lt;/VirtualHost&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="nt">&lt;p&gt;&lt;VirtualHost</span> <span class="s">*:35357</span><span class="nt">&gt;</span>
-</span><span class='line'>  <span class="nb">ServerName</span> openstack.test.jamielennox.net&lt;/p&gt;
+</span><span class='line'><span class="nt">&lt;VirtualHost</span> <span class="s">*:35357</span><span class="nt">&gt;</span>
+</span><span class='line'>  <span class="nb">ServerName</span> openstack.test.jamielennox.net
 </span><span class='line'>
-</span><span class='line'><span class="nt">&lt;p&gt;</span>  <span class="nb">DocumentRoot</span> &amp;ldquo;/var/www/keystone&amp;rdquo;&lt;/p&gt;
+</span><span class='line'>  <span class="nb">DocumentRoot</span> <span class="s2">&quot;/var/www/keystone&quot;</span>
 </span><span class='line'>
-</span><span class='line'><span class="nt">&lt;p&gt;</span>  <span class="nt">&lt;Directory</span> <span class="s">&quot;/var/www/keystone&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;Directory</span> <span class="s">&quot;/var/www/keystone&quot;</span><span class="nt">&gt;</span>
 </span><span class='line'>    <span class="nb">Options</span> Indexes FollowSymLinks MultiViews
 </span><span class='line'>    <span class="nb">AllowOverride</span> <span class="k">None</span>
 </span><span class='line'>    <span class="nb">Require</span> <span class="k">all</span> granted
-</span><span class='line'>  <span class="nt">&lt;/Directory&gt;&lt;/p&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/Directory&gt;</span>
 </span><span class='line'>
-</span><span class='line'><span class="nt">&lt;p&gt;</span>  <span class="c">## Logging</span>
-</span><span class='line'>  <span class="nb">ErrorLog</span> &amp;ldquo;/var/log/httpd/keystone_wsgi_admin_error.log&amp;rdquo;
+</span><span class='line'>  <span class="c">## Logging</span>
+</span><span class='line'>  <span class="nb">ErrorLog</span> <span class="s2">&quot;/var/log/httpd/keystone_wsgi_admin_error.log&quot;</span>
 </span><span class='line'>  <span class="nb">ServerSignature</span> <span class="k">Off</span>
-</span><span class='line'>  <span class="nb">CustomLog</span> &amp;ldquo;/var/log/httpd/keystone_wsgi_admin_access.log&amp;rdquo; combined
+</span><span class='line'>  <span class="nb">CustomLog</span> <span class="s2">&quot;/var/log/httpd/keystone_wsgi_admin_access.log&quot;</span> combined
 </span><span class='line'>  <span class="nb">WSGIDaemonProcess</span> keystone_admin <span class="k">group</span>=keystone processes=1 threads=4 <span class="k">user</span>=keystone
 </span><span class='line'>  <span class="nb">WSGIProcessGroup</span> keystone_admin
-</span><span class='line'>  <span class="nb">WSGIScriptAlias</span> / &amp;ldquo;/var/www/keystone/admin&amp;rdquo;
+</span><span class='line'>  <span class="nb">WSGIScriptAlias</span> / <span class="s2">&quot;/var/www/keystone/admin&quot;</span>
 </span><span class='line'><span class="nt">&lt;/VirtualHost&gt;</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>If you restart Apache with this configuration you should see keystone start up and run with no apparent difference.</p>
+If you restart Apache with this configuration you should see keystone start up and run with no apparent difference.
 
-<p>There has been a push recently to stop using ports 5000 and 35357 when using apache and run them off the <code>/main</code> and <code>/admin</code> paths.
-This will work just fine, however I&rsquo;m trying to do this with as little overall change to the initial deployment, you may obviously set your deployment up to your own needs.</p>
+There has been a push recently to stop using ports 5000 and 35357 when using apache and run them off the `/main` and `/admin` paths.
+This will work just fine, however I&#8217;m trying to do this with as little overall change to the initial deployment, you may obviously set your deployment up to your own needs.
 
-<h2>Part 5 - Convert Keystone to LDAP:</h2>
+##Part 5 - Convert Keystone to LDAP:
 
-<p>First we create a keystone user.
-This isn&rsquo;t required in a typical deployment, however we need to provide a user with which to connect to the ldap server.</p>
+First we create a keystone user.
+This isn&#8217;t required in a typical deployment, however we need to provide a user with which to connect to the ldap server.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">ipa user-add &amp;ndash;first keystone &amp;ndash;last openstack &amp;ndash;random keystone</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">ipa user-add --first keystone --last openstack --random keystone</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p><code>--random</code> sets a random password, you can omit it and set your own if you like.</p>
+`&#8211;random` sets a random password, you can omit it and set your own if you like.
 
-<p>Edit the <code>/etc/keystone/keystone.conf</code> file to use LDAP for the identity backend, and SQL for assignments.
-This is the preferred deployment so whilst the users are in LDAP, projects and the permissions a user has on a project are managed in SQL.</p>
+Edit the `/etc/keystone/keystone.conf` file to use LDAP for the identity backend, and SQL for assignments.
+This is the preferred deployment so whilst the users are in LDAP, projects and the permissions a user has on a project are managed in SQL.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 </pre></td><td class='code'><pre><code class='ini'><span class='line'><span class="k">[identity]</span>
-</span><span class='line'><span class="na">driver</span> <span class="o">=</span> <span class="s">keystone.identity.backends.ldap.Identity&lt;/p&gt;</span>
+</span><span class='line'><span class="na">driver</span> <span class="o">=</span> <span class="s">keystone.identity.backends.ldap.Identity</span>
 </span><span class='line'>
-</span><span class='line'><span class="err">&lt;p&gt;</span><span class="k">[assignment]</span>
+</span><span class='line'><span class="k">[assignment]</span>
 </span><span class='line'><span class="na">driver</span> <span class="o">=</span> <span class="s">keystone.assignment.backends.sql.Assignment</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Still in <code>/etc/keystone/keystone.conf</code> we set the parameters for how to talk to the LDAP server that FreeIPA set up.
+Still in `/etc/keystone/keystone.conf` we set the parameters for how to talk to the LDAP server that FreeIPA set up.
 The password used here is the random one generated above.
-You will need to replace the pattern <code>dc=test,dc=jamielennox,dc=net</code> with the similarly formatted realm that FreeIPA is configured for in your deployment.
-This is the complete (comments removed) <code>[ldap]</code> section of the <code>keystone.conf</code> file.
-This plus the <code>[identity]</code> block above are also exactly what would go into a <a href="http://docs.openstack.org/developer/keystone/configuration.html#domain-specific-drivers">domain specific backend</a> configuration if you are deploying that way.</p>
+You will need to replace the pattern `dc=test,dc=jamielennox,dc=net` with the similarly formatted realm that FreeIPA is configured for in your deployment.
+This is the complete (comments removed) `[ldap]` section of the `keystone.conf` file.
+This plus the `[identity]` block above are also exactly what would go into a [domain specific backend](http://docs.openstack.org/developer/keystone/configuration.html#domain-specific-drivers) configuration if you are deploying that way.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -313,46 +303,46 @@ This plus the <code>[identity]</code> block above are also exactly what would go
 </span><span class='line'><span class="na">user_enabled_attribute</span><span class="o">=</span><span class="s">nsAccountLock</span>
 </span><span class='line'><span class="na">user_enabled_default</span><span class="o">=</span><span class="s">False</span>
 </span><span class='line'><span class="na">user_enabled_invert</span><span class="o">=</span><span class="s">true</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Make sure to restart keystone (via apache) to set this configuration.</p>
+Make sure to restart keystone (via apache) to set this configuration.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@openstack]# systemctl restart httpd</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<h2>Part 6 - Recreate the LDAP users:</h2>
+##Part 6 - Recreate the LDAP users:
 
-<p>This is particularly hacky.
+This is particularly hacky.
 For my single domain deployment when I switch Keystone over to using the LDAP source it will loose access to the users that were set up via Packstack so I will need to recreate these users.
-If you are using multiple domains you can skip this, leave the service users in the default domain and use your FreeIPA users via an alternative domain.</p>
+If you are using multiple domains you can skip this, leave the service users in the default domain and use your FreeIPA users via an alternative domain.
 
-<p>The easiest way I&rsquo;ve found to do this is to remove the <code>[general]</code> tag at the top of the Packstack answers file that was created and then <code>source</code> it as bash environment variables.
-This answers file is generally found in <code>/root/</code> and will be appended with a timestamp.</p>
+The easiest way I&#8217;ve found to do this is to remove the `[general]` tag at the top of the Packstack answers file that was created and then `source` it as bash environment variables.
+This answers file is generally found in `/root/` and will be appended with a timestamp.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="gp">[root@openstack]# sed -i -e &amp;ldquo;s/[general]/#</span> <span class="o">[</span>general<span class="o">]</span>/<span class="p">&amp;</span>rdquo<span class="p">;</span> packstack-answers.txt
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="gp">[root@openstack]# sed -i -e &quot;s/\[general\]/#</span> <span class="o">[</span>general<span class="o">]</span>/<span class="err">&quot;</span> packstack-answers.txt
 </span><span class='line'><span class="go">[root@openstack]# source packstack-answers.txt</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Then install the admin tools to allow you to add users via command line and <code>kinit</code> as the <code>admin</code> user to have permission to add users.</p>
+Then install the admin tools to allow you to add users via command line and `kinit` as the `admin` user to have permission to add users.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@openstack]# yum install -y ipa-admintools</span>
 </span><span class='line'><span class="go">[root@openstack]# kinit admin</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Then recreate those users, I&rsquo;ll omit the shell prompt here so that it&rsquo;s easier to copy and paste, but you could script this fairly easily.
-We are creating a FreeIPA user for each of the services, setting a password for the user, and then assigning the user a role on the services project.</p>
+Then recreate those users, I&#8217;ll omit the shell prompt here so that it&#8217;s easier to copy and paste, but you could script this fairly easily.
+We are creating a FreeIPA user for each of the services, setting a password for the user, and then assigning the user a role on the services project.
 
-<p>I&rsquo;m using the admin token to assign the roles as there are no longer any valid users that I can use to assign these roles.</p>
+I&#8217;m using the admin token to assign the roles as there are no longer any valid users that I can use to assign these roles.
 
-<p><strong>NOTE</strong>: This is a fairly unsafe way of creating these users in IPA as they are given full home and login permissions to any IPA machines.
-In a real deployment these should be system users and ensure they aren&rsquo;t able to login.</p>
+__NOTE__: This is a fairly unsafe way of creating these users in IPA as they are given full home and login permissions to any IPA machines.
+In a real deployment these should be system users and ensure they aren&#8217;t able to login.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -372,77 +362,77 @@ In a real deployment these should be system users and ensure they aren&rsquo;t a
 <span class='line-number'>18</span>
 <span class='line-number'>19</span>
 <span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">export OS_ENDPOINT=&lt;a href=&quot;http://localhost:35357/v2.0&quot;&gt;http://localhost:35357/v2.0&lt;/a&gt;</span>
-</span><span class='line'><span class="go">export OS_TOKEN=$CONFIG_KEYSTONE_ADMIN_TOKEN&lt;/p&gt;</span>
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">export OS_ENDPOINT=http://localhost:35357/v2.0</span>
+</span><span class='line'><span class="go">export OS_TOKEN=$CONFIG_KEYSTONE_ADMIN_TOKEN</span>
 </span><span class='line'>
-</span><span class='line'><span class="go">&lt;p&gt;ipa user-add &amp;ndash;first nova &amp;ndash;last openstack nova &amp;amp;&amp;amp; echo $CONFIG_NOVA_KS_PW | ipa passwd nova</span>
-</span><span class='line'><span class="go">keystone user-role-add &amp;ndash;user nova &amp;ndash;role admin &amp;ndash;tenant services&lt;/p&gt;</span>
+</span><span class='line'><span class="go">ipa user-add --first nova --last openstack nova &amp;&amp; echo $CONFIG_NOVA_KS_PW | ipa passwd nova</span>
+</span><span class='line'><span class="go">keystone user-role-add --user nova --role admin --tenant services</span>
 </span><span class='line'>
-</span><span class='line'><span class="go">&lt;p&gt;ipa user-add &amp;ndash;first ceilometer &amp;ndash;last openstack ceilometer &amp;amp;&amp;amp; echo $CONFIG_CEILOMETER_KS_PW | ipa passwd ceilometer</span>
-</span><span class='line'><span class="go">keystone user-role-add &amp;ndash;user ceilometer &amp;ndash;role admin &amp;ndash;tenant services&lt;/p&gt;</span>
+</span><span class='line'><span class="go">ipa user-add --first ceilometer --last openstack ceilometer &amp;&amp; echo $CONFIG_CEILOMETER_KS_PW | ipa passwd ceilometer</span>
+</span><span class='line'><span class="go">keystone user-role-add --user ceilometer --role admin --tenant services</span>
 </span><span class='line'>
-</span><span class='line'><span class="go">&lt;p&gt;ipa user-add &amp;ndash;first cinder &amp;ndash;last openstack cinder &amp;amp;&amp;amp; echo $CONFIG_CINDER_KS_PW | ipa passwd cinder</span>
-</span><span class='line'><span class="go">keystone user-role-add &amp;ndash;user cinder &amp;ndash;role admin &amp;ndash;tenant services&lt;/p&gt;</span>
+</span><span class='line'><span class="go">ipa user-add --first cinder --last openstack cinder &amp;&amp; echo $CONFIG_CINDER_KS_PW | ipa passwd cinder</span>
+</span><span class='line'><span class="go">keystone user-role-add --user cinder --role admin --tenant services</span>
 </span><span class='line'>
-</span><span class='line'><span class="go">&lt;p&gt;ipa user-add &amp;ndash;first glance &amp;ndash;last openstack glance &amp;amp;&amp;amp; echo $CONFIG_GLANCE_KS_PW | ipa passwd glance</span>
-</span><span class='line'><span class="go">keystone user-role-add &amp;ndash;user glance &amp;ndash;role admin &amp;ndash;tenant services&lt;/p&gt;</span>
+</span><span class='line'><span class="go">ipa user-add --first glance --last openstack glance &amp;&amp; echo $CONFIG_GLANCE_KS_PW | ipa passwd glance</span>
+</span><span class='line'><span class="go">keystone user-role-add --user glance --role admin --tenant services</span>
 </span><span class='line'>
-</span><span class='line'><span class="go">&lt;p&gt;ipa user-add &amp;ndash;first neutron &amp;ndash;last openstack neutron &amp;amp;&amp;amp; echo $CONFIG_NEUTRON_KS_PW | ipa passwd neutron</span>
-</span><span class='line'><span class="go">keystone user-role-add &amp;ndash;user neutron &amp;ndash;role admin &amp;ndash;tenant services&lt;/p&gt;</span>
+</span><span class='line'><span class="go">ipa user-add --first neutron --last openstack neutron &amp;&amp; echo $CONFIG_NEUTRON_KS_PW | ipa passwd neutron</span>
+</span><span class='line'><span class="go">keystone user-role-add --user neutron --role admin --tenant services</span>
 </span><span class='line'>
-</span><span class='line'><span class="go">&lt;p&gt;ipa user-add &amp;ndash;first swift &amp;ndash;last openstack swift &amp;amp;&amp;amp; echo $CONFIG_SWIFT_KS_PW | ipa passwd swift</span>
-</span><span class='line'><span class="go">keystone user-role-add &amp;ndash;user swift &amp;ndash;role admin &amp;ndash;tenant services</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span><span class='line'><span class="go">ipa user-add --first swift --last openstack swift &amp;&amp; echo $CONFIG_SWIFT_KS_PW | ipa passwd swift</span>
+</span><span class='line'><span class="go">keystone user-role-add --user swift --role admin --tenant services</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>I add the keystone user to the services project as well - though in this case it won&rsquo;t really matter.</p>
+I add the keystone user to the services project as well - though in this case it won&#8217;t really matter.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">keystone user-role-add &amp;ndash;user keystone &amp;ndash;role admin &amp;ndash;tenant services</span>
-</span></code></pre></td></tr></table></div></figure></p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">keystone user-role-add --user keystone --role admin --tenant services</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Create the demo user and add the default roles to admin and demo so the <code>keystonerc_admin</code> and <code>keystonerc_demo</code> files still work as expected.</p>
+Create the demo user and add the default roles to admin and demo so the `keystonerc_admin` and `keystonerc_demo` files still work as expected.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">ipa user-add &amp;ndash;first demo &amp;ndash;last openstack demo &amp;amp;&amp;amp; echo $CONFIG_KEYSTONE_DEMO_PW  | ipa passwd demo</span>
-</span><span class='line'><span class="go">keystone user-role-add &amp;ndash;user demo &amp;ndash;role &lt;em&gt;member&lt;/em&gt; &amp;ndash;tenant demo&lt;/p&gt;</span>
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">ipa user-add --first demo --last openstack demo &amp;&amp; echo $CONFIG_KEYSTONE_DEMO_PW  | ipa passwd demo</span>
+</span><span class='line'><span class="go">keystone user-role-add --user demo --role _member_ --tenant demo</span>
 </span><span class='line'>
-</span><span class='line'><span class="go">&lt;p&gt;keystone user-role-add &amp;ndash;user admin &amp;ndash;role admin &amp;ndash;tenant admin</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span><span class='line'><span class="go">keystone user-role-add --user admin --role admin --tenant admin</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<h2>Part 7 - Kerberos:</h2>
+##Part 7 - Kerberos:
 
-<p>Now we look to add Kerberos authentication.
+Now we look to add Kerberos authentication.
 First we have to register the service that you want to use on the IPA server.
-For the current Kerberos plugin this <em>must</em> be the HTTP service or the plugin won&rsquo;t catch it.
-Then we fetch the keytab and put it somewhere apache can access it.</p>
+For the current Kerberos plugin this _must_ be the HTTP service or the plugin won&#8217;t catch it.
+Then we fetch the keytab and put it somewhere apache can access it.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="gp">[root@openstack]# ipa service-add HTTP/&lt;a href=&quot;&amp;#x6d;&amp;#97;&amp;#x69;&amp;#108;&amp;#116;&amp;#111;&amp;#58;&amp;#x6f;&amp;#112;&amp;#101;&amp;#x6e;&amp;#115;&amp;#x74;&amp;#97;&amp;#99;&amp;#107;&amp;#46;&amp;#x74;&amp;#x65;&amp;#x73;&amp;#116;&amp;#46;&amp;#x6a;&amp;#97;&amp;#x6d;&amp;#105;&amp;#x65;&amp;#x6c;&amp;#x65;&amp;#110;&amp;#x6e;&amp;#111;&amp;#120;&amp;#46;&amp;#110;&amp;#101;&amp;#116;&amp;#x40;&amp;#x54;&amp;#x45;&amp;#x53;&amp;#84;&amp;#x2e;&amp;#74;&amp;#65;&amp;#x4d;&amp;#73;&amp;#69;&amp;#76;&amp;#x45;&amp;#78;&amp;#x4e;&amp;#x4f;&amp;#x58;&amp;#x2e;&amp;#x4e;&amp;#x45;&amp;#84;&quot;&gt;&amp;#111;&amp;#x70;&amp;#101;&amp;#x6e;&amp;#x73;&amp;#116;&amp;#97;&amp;#99;&amp;#x6b;&amp;#46;&amp;#x74;&amp;#101;&amp;#x73;&amp;#116;&amp;#x2e;&amp;#x6a;&amp;#97;&amp;#x6d;&amp;#105;&amp;#101;&amp;#108;&amp;#x65;&amp;#110;&amp;#110;&amp;#111;&amp;#x78;&amp;#x2e;&amp;#x6e;&amp;#101;&amp;#x74;&amp;#x40;&amp;#84;&amp;#69;&amp;#83;&amp;#84;&amp;#x2e;&amp;#74;&amp;#65;&amp;#x4d;&amp;#x49;&amp;#69;&amp;#76;&amp;#69;&amp;#78;&amp;#78;&amp;#x4f;&amp;#x58;&amp;#46;&amp;#78;&amp;#x45;&amp;#</span>x54<span class="p">;</span>&lt;/a&gt;
-</span><span class='line'><span class="gp">[root@openstack]# ipa-getkeytab -s ipa.test.jamielennox.net -p HTTP/&lt;a href=&quot;&amp;#109;&amp;#97;&amp;#x69;&amp;#108;&amp;#116;&amp;#111;&amp;#58;&amp;#x6f;&amp;#x70;&amp;#x65;&amp;#x6e;&amp;#x73;&amp;#x74;&amp;#x61;&amp;#x63;&amp;#107;&amp;#x2e;&amp;#x74;&amp;#101;&amp;#x73;&amp;#116;&amp;#46;&amp;#x6a;&amp;#97;&amp;#x6d;&amp;#105;&amp;#x65;&amp;#x6c;&amp;#101;&amp;#110;&amp;#110;&amp;#x6f;&amp;#x78;&amp;#x2e;&amp;#x6e;&amp;#x65;&amp;#116;&amp;#x40;&amp;#x54;&amp;#x45;&amp;#83;&amp;#84;&amp;#46;&amp;#x4a;&amp;#x41;&amp;#77;&amp;#73;&amp;#69;&amp;#x4c;&amp;#69;&amp;#x4e;&amp;#x4e;&amp;#79;&amp;#88;&amp;#x2e;&amp;#x4e;&amp;#69;&amp;#84;&quot;&gt;&amp;#x6f;&amp;#x70;&amp;#x65;&amp;#x6e;&amp;#115;&amp;#116;&amp;#x61;&amp;#x63;&amp;#x6b;&amp;#x2e;&amp;#x74;&amp;#101;&amp;#115;&amp;#x74;&amp;#46;&amp;#106;&amp;#x61;&amp;#x6d;&amp;#105;&amp;#x65;&amp;#108;&amp;#101;&amp;#x6e;&amp;#x6e;&amp;#x6f;&amp;#x78;&amp;#46;&amp;#x6e;&amp;#x65;&amp;#116;&amp;#x40;&amp;#84;&amp;#x45;&amp;#83;&amp;#x54;&amp;#x2e;&amp;#74;&amp;#65;&amp;#x4d;&amp;#73;&amp;#x45;&amp;#76;&amp;#69;&amp;#x4e;&amp;#x4e;&amp;#x4f;&amp;#88;&amp;#46;&amp;#78;&amp;#69;&amp;#</span>x54<span class="p">;</span>&lt;/a&gt; -k /etc/httpd/conf/httpd.keytab
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@openstack]# ipa service-add HTTP/openstack.test.jamielennox.net@TEST.JAMIELENNOX.NET</span>
+</span><span class='line'><span class="go">[root@openstack]# ipa-getkeytab -s ipa.test.jamielennox.net -p HTTP/openstack.test.jamielennox.net@TEST.JAMIELENNOX.NET -k /etc/httpd/conf/httpd.keytab</span>
 </span><span class='line'><span class="go">[root@openstack]# chown apache: /etc/httpd/conf/httpd.keytab</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Install the <code>mod_auth_kerb</code> apache module which handles Kerberos Authentication, and enable it.
-(Generally you don&rsquo;t have to enable module, this looks like a pattern that packstack has established)</p>
+Install the `mod_auth_kerb` apache module which handles Kerberos Authentication, and enable it.
+(Generally you don&#8217;t have to enable module, this looks like a pattern that packstack has established)
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@openstack]# yum install -y mod_auth_kerb</span>
 </span><span class='line'><span class="go">[root@openstack]# ln -s /etc/httpd/conf.modules.d/10-auth_kerb.conf /etc/httpd/conf.d/10-auth_kerb.load</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Add the following snippet to <em>both</em> the vhosts we created earlier, adjusting <code>/main</code> to <code>/admin</code> for the admin port.
-The <code>WSGIScriptAlias / "/var/www/keystone/main"</code> is already present from the initial setup, this just shows that you need to insert the <code>/krb</code> reference <em>above</em> it to make it take precedence.</p>
+Add the following snippet to _both_ the vhosts we created earlier, adjusting `/main` to `/admin` for the admin port.
+The `WSGIScriptAlias / &#8220;/var/www/keystone/main&#8221;` is already present from the initial setup, this just shows that you need to insert the `/krb` reference _above_ it to make it take precedence.
 
-<p>This is creating a new route to the Keystone server code through which every access is Kerberos protected.
-We will use this address later as our authentication URL.</p>
+This is creating a new route to the Keystone server code through which every access is Kerberos protected.
+We will use this address later as our authentication URL.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -458,13 +448,13 @@ We will use this address later as our authentication URL.</p>
 <span class='line-number'>14</span>
 <span class='line-number'>15</span>
 <span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='apache'><span class='line'><span class="nb">WSGIScriptAlias</span> <span class="sx">/krb</span> &amp;ldquo;/var/www/keystone/main&amp;rdquo;
-</span><span class='line'><span class="nb">WSGIScriptAlias</span> / &amp;ldquo;/var/www/keystone/main&amp;rdquo;&lt;/p&gt;
+</pre></td><td class='code'><pre><code class='apache'><span class='line'><span class="nb">WSGIScriptAlias</span> <span class="sx">/krb</span> <span class="s2">&quot;/var/www/keystone/main&quot;</span>
+</span><span class='line'><span class="nb">WSGIScriptAlias</span> / <span class="s2">&quot;/var/www/keystone/main&quot;</span>
 </span><span class='line'>
-</span><span class='line'><span class="nt">&lt;p&gt;&lt;Location</span> <span class="s">&quot;/krb/v3/auth/tokens&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'><span class="nt">&lt;Location</span> <span class="s">&quot;/krb/v3/auth/tokens&quot;</span><span class="nt">&gt;</span>
 </span><span class='line'>      <span class="nb">LogLevel</span> <span class="k">debug</span>
 </span><span class='line'>      <span class="nb">AuthType</span> Kerberos
-</span><span class='line'>      <span class="nb">AuthName</span> &amp;ldquo;Kerberos Login&amp;rdquo;
+</span><span class='line'>      <span class="nb">AuthName</span> <span class="s2">&quot;Kerberos Login&quot;</span>
 </span><span class='line'>      <span class="nb">KrbMethodNegotiate</span> <span class="k">on</span>
 </span><span class='line'>      <span class="nb">KrbMethodK5Passwd</span> <span class="k">off</span>
 </span><span class='line'>      <span class="nb">KrbServiceName</span> HTTP
@@ -474,88 +464,82 @@ We will use this address later as our authentication URL.</p>
 </span><span class='line'>      <span class="nb">Require</span> valid-user
 </span><span class='line'>      <span class="nb">SetEnv</span> REMOTE_DOMAIN Default
 </span><span class='line'><span class="nt">&lt;/Location&gt;</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>The SetEnv directive there is not required as we are deploying into the <code>Default</code> domain, however if you are deploying into a different domain you should set <code>REMOTE_DOMAIN</code> to the <em>name</em> of the user&rsquo;s domain.</p>
+The SetEnv directive there is not required as we are deploying into the `Default` domain, however if you are deploying into a different domain you should set `REMOTE_DOMAIN` to the _name_ of the user&#8217;s domain.
 
-<p>Restart Apache.</p>
+Restart Apache.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@openstack]# systemctl restart httpd</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<h2>Part 8 - Client:</h2>
+##Part 8 - Client:
 
-<p>Obviously you don&rsquo;t have to run the client on the same machine as the server.
-You can start up another machine here and do an <code>ipa-client-install</code> to initialize it for testing if you like, or put it on your own desktop (you can add your kerberos server to <code>/etc/krb5.conf</code> to not register it as a FreeIPA client).</p>
+Obviously you don&#8217;t have to run the client on the same machine as the server.
+You can start up another machine here and do an `ipa-client-install` to initialize it for testing if you like, or put it on your own desktop (you can add your kerberos server to `/etc/krb5.conf` to not register it as a FreeIPA client).
 
-<p>Install the openstack command line tool</p>
+Install the openstack command line tool
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@openstack]# yum install -y python-openstackclient</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>We also want to install the Kerberos client plugin from source.
-This plugin is imminently due for its first release on PyPI however it will take a while to get to packages.</p>
+We also want to install the Kerberos client plugin from source.
+This plugin is imminently due for its first release on PyPI however it will take a while to get to packages.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@openstack]# yum groupinstall &amp;ldquo;Development Tools&amp;rdquo;</span>
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[root@openstack]# yum groupinstall &quot;Development Tools&quot;</span>
 </span><span class='line'><span class="go">[root@openstack]# yum install -y krb5-devel</span>
-</span><span class='line'><span class="go">[root@openstack]# git clone &lt;a href=&quot;https://github.com/openstack/python-keystoneclient-kerberos.git&quot;&gt;https://github.com/openstack/python-keystoneclient-kerberos.git&lt;/a&gt; /opt/python-keystoneclient-kerberos</span>
+</span><span class='line'><span class="go">[root@openstack]# git clone https://github.com/openstack/python-keystoneclient-kerberos.git /opt/python-keystoneclient-kerberos</span>
 </span><span class='line'><span class="go">[root@openstack]# pip install -e /opt/python-keystoneclient-kerberos</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Now <code>kinit</code> as the demo user to get a Kerberos ticket to test with.</p>
+Now `kinit` as the demo user to get a Kerberos ticket to test with.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='console'><span class='line'><span class="gp">[root@openstack]# su centos  #</span> or another user
 </span><span class='line'><span class="gp">[centos@openstack]$ echo $</span>CONFIG_KEYSTONE_DEMO_PW <span class="p">|</span> kinit demo
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Finally, for the dramatic finale, let&rsquo;s get a token.
-I&rsquo;m putting the authentication parameters on the command line however they all exist as environment variables to create your own <code>keystonerc</code> file.</p>
+Finally, for the dramatic finale, let&#8217;s get a token.
+I&#8217;m putting the authentication parameters on the command line however they all exist as environment variables to create your own `keystonerc` file.
 
-<p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[centos@openstack]$ export OS_AUTH_URL=&lt;a href=&quot;http://openstack.test.jamielennox.net:5000/krb/v3&quot;&gt;http://openstack.test.jamielennox.net:5000/krb/v3&lt;/a&gt;</span>
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[centos@openstack]$ export OS_AUTH_URL=http://openstack.test.jamielennox.net:5000/krb/v3</span>
 </span><span class='line'><span class="go">[centos@openstack]$ export OS_AUTH_TYPE=v3kerberos</span>
 </span><span class='line'><span class="go">[centos@openstack]$ export OS_PROJECT_NAME=demo</span>
 </span><span class='line'><span class="go">[centos@openstack]$ export OS_PROJECT_DOMAIN_ID=default</span>
 </span><span class='line'><span class="go">[centos@openstack]$ openstack token issue</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>Notice the main authentication differences (and I&rsquo;ll use the CLI equivalent for demonstration):</p>
+Notice the main authentication differences (and I&#8217;ll use the CLI equivalent for demonstration):
 
-<ul>
-<li><code>--os-auth-url http://openstack.test.jamielennox.net:5000/krb/v3</code> we need to specify the v3 <code>auth-url</code> and include the <code>/krb</code> path so that the authentication request goes to the Kerberos route.
-Also because of the way your Kerberos ticket will be validated you have to use the full hostname as the url, even if you are calling from that box.</li>
-<li><code>--os-auth-type v3kerberos</code> which tells the CLI to use the kerberos plugin appropriate for the v3 API.</li>
-<li><code>--os-project-domain-id</code> because we are in the V3 API now so you need to specify the domain-id if you use <code>--os-project-name</code></li>
-</ul>
+ - `&#8211;os-auth-url http://openstack.test.jamielennox.net:5000/krb/v3` we need to specify the v3 `auth-url` and include the `/krb` path so that the authentication request goes to the Kerberos route.
+   Also because of the way your Kerberos ticket will be validated you have to use the full hostname as the url, even if you are calling from that box.
+ - `&#8211;os-auth-type v3kerberos` which tells the CLI to use the kerberos plugin appropriate for the v3 API.
+ - `&#8211;os-project-domain-id` because we are in the V3 API now so you need to specify the domain-id if you use `&#8211;os-project-name`
 
+# Finish
 
-<h1>Finish</h1>
+Getting to the point where we can support the `openstack` command line tool has taken a lot of foundational work, and due to the independence of the clients it may be some time before the existing CLIs come to accept an authentication plugin parameter.
+However now the foundation is in place I hope to see Kerberos becoming a more widely deployed authentication mechanism for OpenStack.
 
-<p>Getting to the point where we can support the <code>openstack</code> command line tool has taken a lot of foundational work, and due to the independence of the clients it may be some time before the existing CLIs come to accept an authentication plugin parameter.
-However now the foundation is in place I hope to see Kerberos becoming a more widely deployed authentication mechanism for OpenStack.</p>
+# Thanks
 
-<h1>Thanks</h1>
+Special thanks have to go to:
 
-<p>Special thanks have to go to:</p>
-
-<ul>
-<li><a href="https://twitter.com/josecastroleon">Jose Castro Leon</a> and <a href="https://twitter.com/marekdenis">Marek Dennis</a> from CERN who did the initial Kerberos implementation and have been pushing the approach.</li>
-<li><a href="https://blog-nkinder.rhcloud.com/">Nathan Kinder</a> who <a href="https://github.com/nkinder/rdo-vm-factory/blob/master/rdo-kerberos-setup/vm-post-cloud-init-rdo.sh">scripted a setup</a> that is more advanced and production worthy that I cheated off for a number of settings.</li>
-<li><a href="http://adam.younglogic.com/">Adam Young</a> who started this whole Kerberos quest and who has stepped me through most of the above at least once.</li>
-</ul>
-
+ - [Jose Castro Leon](https://twitter.com/josecastroleon) and [Marek Dennis](https://twitter.com/marekdenis) from CERN who did the initial Kerberos implementation and have been pushing the approach.
+ - [Nathan Kinder](https://blog-nkinder.rhcloud.com/) who [scripted a setup](https://github.com/nkinder/rdo-vm-factory/blob/master/rdo-kerberos-setup/vm-post-cloud-init-rdo.sh) that is more advanced and production worthy that I cheated off for a number of settings.
+ - [Adam Young](http://adam.younglogic.com/) who started this whole Kerberos quest and who has stepped me through most of the above at least once.
 ]]></content>
   </entry>
   

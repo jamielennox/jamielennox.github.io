@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2015-02-21T15:00:52+11:00</updated>
+  <updated>2015-02-23T11:05:27+11:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,62 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[V3 Authentication With Auth_token Middleware]]></title>
+    <link href="http://www.jamielennox.net/blog/2015/02/23/v3-authentication-with-auth-token-middleware/"/>
+    <updated>2015-02-23T10:57:46+11:00</updated>
+    <id>http://www.jamielennox.net/blog/2015/02/23/v3-authentication-with-auth-token-middleware</id>
+    <content type="html"><![CDATA[<p>Auth_token is the middleware piece in OpenStack responsible for validating tokens and passing authentication and authorization information down to the services.
+It has been a long time complaint of those wishing to move to the V3 identity API that auth_token only supported the v2 API for authentication.</p>
+
+<p>Then auth_token middleware adopted authentication plugins and the people rejoiced!</p>
+
+<p>Or it went by almost completely unnoticed.
+Auth is not an area people like to mess with once it&rsquo;s working and people are still coming to terms with configuring via plugins.</p>
+
+<p>The benefit of authentication plugins is that it allows you to use <a href="http://www.jamielennox.net/blog/2015/02/17/loading-authentication-plugins/">any plugin you like for authentication</a> - including the v3 plugins.
+A downside is that being able to load any plugin means that there isn&rsquo;t the same set of default options present in the sample config files that would indicate the new options available for setting.
+Particularly as we have to keep the old options around for compatibility.</p>
+
+<p>The most common configuration I expect for v3 authentication with auth_token middleware is:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ini'><span class='line'><span class="k">[keystone_authtoken]</span>
+</span><span class='line'><span class="na">auth_uri</span> <span class="o">=</span> <span class="s">https://public.keystone.uri:5000/</span>
+</span><span class='line'><span class="na">cafile</span> <span class="o">=</span> <span class="s">/path/to/cas</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">auth_plugin</span> <span class="o">=</span> <span class="s">password</span>
+</span><span class='line'><span class="na">auth_url</span> <span class="o">=</span> <span class="s">http://internal.keystone.uri:35357/</span>
+</span><span class='line'><span class="na">username</span> <span class="o">=</span> <span class="s">service</span>
+</span><span class='line'><span class="na">password</span> <span class="o">=</span> <span class="s">service_pass</span>
+</span><span class='line'><span class="na">user_domain_name</span> <span class="o">=</span> <span class="s">service_domain</span>
+</span><span class='line'><span class="na">project_name</span> <span class="o">=</span> <span class="s">project</span>
+</span><span class='line'><span class="na">project_domain_name</span> <span class="o">=</span> <span class="s">service_domain</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>password</code> plugin will query the <code>auth_url</code> for supported API versions and then use either v2 or v3 auth depending on what parameters you&rsquo;ve specified.
+If you want to save a round trip (once on startup) you can use the <code>v3password</code> plugin which takes the same parameters but requires a V3 URL to be specified in <code>auth_url</code>.</p>
+
+<p>An unfortunate thing we&rsquo;ve noticed from this is that there is going to be some confusion as most plugins present an <code>auth_url</code> parameter (used by the plugin to know where to authenticate the service user) along with the existing <code>auth_uri</code> parameter (reported in the headers of 403 responses to tell users where to authenticate).
+This is a known issue we need to address and will likely result in changing the name of the <code>auth_uri</code> parameter as the concept of an <code>auth_url</code> is used by all existing clients and plugins.</p>
+
+<p>For further proof that this works as expected checkout <a href="https://github.com/openstack-dev/devstack/blob/5ce44cd63b6e2b53f08a6b4b87cb4ab11d1ade26/lib/keystone#L448">devstack</a> which has been operating this way for a couple of weeks.</p>
+
+<p><em>NOTE:</em> Support for authentication plugins was released in keystonemiddleware 1.3.0 released 2014-12-18.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Loading Authentication Plugins]]></title>
