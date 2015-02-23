@@ -14,7 +14,7 @@ Then auth\_token middleware adopted authentication plugins and the people rejoic
 Or it went by almost completely unnoticed.
 Auth is not an area people like to mess with once it's working and people are still coming to terms with configuring via plugins.
 
-The benefit of authentication plugins is that it allows you to use [any plugin you like for authentication]({% post_url 2015-02-17-loading-authentication-plugins %}) - including the v3 plugins.
+The benefit of authentication plugins is that it allows you to use [any plugin you like for authentication](http://www.jamielennox.net/blog/2015/02/17/loading-authentication-plugins/) - including the v3 plugins.
 A downside is that being able to load any plugin means that there isn't the same set of default options present in the sample config files that would indicate the new options available for setting.
 Particularly as we have to keep the old options around for compatibility.
 
