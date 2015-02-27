@@ -9,7 +9,8 @@
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="Auth_token is the middleware piece in OpenStack responsible for validating tokens and passing authentication and authorization information down to &hellip;">
+  <meta name="description" content="Motivation: Kerberos authentication provides a good experience for allowing users to connect to a service.
+However this authentication does not allow &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -116,6 +117,482 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/02/27/setting-up-s4u2proxy/">Setting Up S4u2proxy</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-02-27T18:48:11+11:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>6:48 pm</span></time>
+        
+         | <a href="/blog/2015/02/27/setting-up-s4u2proxy/#disqus_thread">Comments</a>
+        
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>Motivation:</h2>
+
+<p>Kerberos authentication provides a good experience for allowing users to connect to a service.
+However this authentication does not allow the user to take the received ticket and further communicate with another service.</p>
+
+<p>The canonical example of this is when authenticating to a web service we want to use the same user credentials to authenticate with an LDAP service, rather than require credentials for the service itself.</p>
+
+<p>In my specific case if I have a <a href="http://www.jamielennox.net/blog/2015/02/12/step-by-step-kerberized-keystone/">kerberized keystone</a> then when the user talks to Horizon I want to forward the user&rsquo;s ticket to authenticate with keystone.</p>
+
+<p>The mechanism that allows us to forward these Kerberos tickets is called Service-for-User-to-Proxy or S4U2Proxy.
+To mitigate some of the security issues with delegating user tickets there are strict controls over which services are allowed to forward tickets and to whom which have to be configured.</p>
+
+<p>For a more in-depth explanation check out the <a href="#furtherreading">further reading</a> section at the end of this post.</p>
+
+<h2>Scenario:</h2>
+
+<p>I intend this guide to be a step by step tutorial into setting up a basic S4U2 proxying service that we can verify and give you enough information to go about setting up more complex delegations.
+If you are just looking for the raw commands you can jump down to <a href="#delegation">Setting up the Delegation</a>.</p>
+
+<p>I created 3 Centos 7 virtual machines on a private network:</p>
+
+<ul>
+<li>An IPA server at <code>ipa.s4u2.jamielennox.net</code></li>
+<li>A service provider at <code>service.s4u2.jamielennox.net</code> that will provide the target service.</li>
+<li>An S4U2 proxy service at <code>proxy.s4u2.jamielennox.net</code> that will accept a Kerberos ticket and forward it to <code>service.s4u2.jamielennox.net</code></li>
+</ul>
+
+
+<p>For this setup I am creating a testing realm called <code>S4U2.JAMIELENNOX.NET</code>.
+I will post the setup that works for my environment and leave it up to you to recognize where you should use your own service names.</p>
+
+<h2>Setting up IPA</h2>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>hostnamectl set-hostname ipa.s4u2.jamielennox.net
+</span><span class='line'>yum install -y ipa-server bind-dyndb-ldap
+</span><span class='line'>ipa-server-install</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I pick the option to enable DNS as I think it&rsquo;s easier, you can skip that but then you&rsquo;ll need to make <code>/etc/hosts</code> entries for each of the hosts.</p>
+
+<h2>Setting up the Service</h2>
+
+<p>We start by doing the basic configuration of the machine and setting it up as an IPA client machine.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>hostnamectl <span class="nb">set</span>-hostname service.s4u2.jamielennox.net
+</span><span class='line'>yum install -y ipa-client
+</span><span class='line'>vim /etc/resolv.conf  <span class="c"># set DNS server to IPA IP address</span>
+</span><span class='line'>ipa-client-install
+</span><span class='line'>yum install -y httpd php mod_auth_kerb
+</span><span class='line'>rm /etc/httpd/conf.d/welcome.conf  <span class="c"># a stub page that gets in the way</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Register that we will be exposing a HTTP service on the machine:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>yum install -y ipa-admintools
+</span><span class='line'>kinit admin
+</span><span class='line'>ipa service-add HTTP/service.s4u2.jamielennox.net@S4U2.JAMIELENNOX.NET
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Fetch the Kerberos keytab from IPA and make it accessible to Apache:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>ipa-getkeytab -s ipa.s4u2.jamielennox.net -p HTTP/service.s4u2.jamielennox.net@S4U2.JAMIELENNOX.NET -k /etc/httpd/conf/httpd.keytab
+</span><span class='line'>chown apache: /etc/httpd/conf/httpd.keytab
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Create a simple site that will display the environment variables the server has received.
+I share most people&rsquo;s opinion of PHP, however for a simple diagnostic site it&rsquo;s hard to beat <code>phpinfo()</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>mkdir /var/www/s4u2
+</span><span class='line'><span class="nb">echo</span> <span class="s2">&quot;&lt;?php phpinfo(); ?&gt;&quot;</span> &gt; /var/www/s4u2/index.php
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Configure Apache to serve our simple PHP site behind Kerberos authentication.</p>
+
+<figure class='code'><figcaption><span>/etc/httpd/conf.d/s4u2-service.conf </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='apache'><span class='line'><span class="nt">&lt;VirtualHost</span> <span class="s">*:80</span><span class="nt">&gt;</span>
+</span><span class='line'>  <span class="nb">ServerName</span> service.s4u2.jamielennox.net
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">DocumentRoot</span> <span class="s2">&quot;/var/www/s4u2&quot;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nt">&lt;Directory</span> <span class="s">&quot;/var/www/s4u2&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nb">Options</span> Indexes FollowSymLinks MultiViews
+</span><span class='line'>    <span class="nb">AllowOverride</span> <span class="k">None</span>
+</span><span class='line'>    <span class="nb">Require</span> <span class="k">all</span> granted
+</span><span class='line'>  <span class="nt">&lt;/Directory&gt;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nt">&lt;Location</span> <span class="s">&quot;/&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nb">AuthType</span> Kerberos
+</span><span class='line'>    <span class="nb">AuthName</span> <span class="s2">&quot;Kerberos Login&quot;</span>
+</span><span class='line'>    <span class="nb">KrbMethodNegotiate</span> <span class="k">on</span>
+</span><span class='line'>    <span class="nb">KrbMethodK5Passwd</span> <span class="k">off</span>
+</span><span class='line'>    <span class="nb">KrbServiceName</span> HTTP
+</span><span class='line'>    <span class="nb">KrbAuthRealms</span> S4U2.JAMIELENNOX.NET
+</span><span class='line'>    <span class="nb">Krb5KeyTab</span> <span class="sx">/etc/httpd/conf/httpd.keytab</span>
+</span><span class='line'>    <span class="nb">KrbSaveCredentials</span> <span class="k">on</span>
+</span><span class='line'>    <span class="nb">KrbLocalUserMapping</span> <span class="k">on</span>
+</span><span class='line'>    <span class="nb">Require</span> valid-user
+</span><span class='line'>  <span class="nt">&lt;/Location&gt;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">DirectoryIndex</span> index.php
+</span><span class='line'><span class="nt">&lt;/VirtualHost&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Finally restart Apache to bring up the service site:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>systemctl restart httpd
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Setting up my local machine</h2>
+
+<p>You could easily test all this using curl, however particularly as we are setting up HTTP to HTTP delegation the obvious use is going to be via the browser, so at this point I like to configure firefox to allow Kerberos negotiation.</p>
+
+<p>I don&rsquo;t want my development machine to be an IPA client so I just configure the Kerberos KDC so that I can get a ticket on my machine with <code>kinit</code>.</p>
+
+<p>Edit <code>/etc/krb5.conf</code> to add:</p>
+
+<figure class='code'><figcaption><span>/etc/krb5.conf </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ini'><span class='line'><span class="k">[realms]</span>
+</span><span class='line'> <span class="na">S4U2.JAMIELENNOX.NET</span> <span class="o">=</span> <span class="s">{</span>
+</span><span class='line'><span class="s">  kdc = ipa.s4u2.jamielennox.net</span>
+</span><span class='line'><span class="s">  admin_server = ipa.s4u2.jamielennox.net</span>
+</span><span class='line'><span class="s"> }</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">[domain_realms]</span>
+</span><span class='line'> <span class="na">.s4u2.jamielennox.net</span> <span class="o">=</span> <span class="s">S4U2.JAMIELENNOX.NET</span>
+</span><span class='line'><span class="s"> s4u2.jamielennox.net = S4U2.JAMIELENNOX.NET</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And because I don&rsquo;t want to rely on the DNS provided by this IPA server I&rsquo;ll need to add the service IPs to <code>/etc/hosts</code>:</p>
+
+<figure class='code'><figcaption><span>/etc/hosts </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>10.16.19.24     service.s4u2.jamielennox.net
+</span><span class='line'>10.16.19.100    proxy.s4u2.jamielennox.net
+</span><span class='line'>10.16.19.101    ipa.s4u2.jamielennox.net
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In firefox open the config page (type <code>about:config</code> into the URL bar) and set:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ini'><span class='line'><span class="na">network.negotiate-auth.delegation-uris</span> <span class="o">=</span> <span class="s">.s4u2.jamielennox.net</span>
+</span><span class='line'><span class="na">network.negotiate-auth.trusted-uris</span> <span class="o">=</span> <span class="s">.s4u2.jamielennox.net</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>These are comma seperated values so you can configure this in addition to any existing realms you might have configured.</p>
+
+<p>To test get a ticket:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>kinit admin@S4U2.JAMIELENNOX.NET
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I can now point firefox to <code>http://service.s4u2.jamielennox.net</code> and we see the <code>phpinfo()</code> dump of environment variables.
+This means we have successfully set up our service host.</p>
+
+<p>Interesting environment variables to check for to ensure this is correct are:</p>
+
+<ul>
+<li><code>REMOTE_USER admin</code> shows that the ticket belonged to the admin user.</li>
+<li><code>AUTH_TYPE Negotiate</code> indicates that the user was authenticated via the Keberos mechanism.</li>
+</ul>
+
+
+<h2>Create Proxy Service</h2>
+
+<p>When you register the service you have to mark it as allowed to delegate credentials.
+You can do this anywhere you have an admin ticket or via the web UI, however there&rsquo;s less options to provide if you use one of the ipa client machines.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>ipa service-add HTTP/proxy.s4u2.jamielennox.net@S4U2.JAMIELENNOX.NET --ok-as-delegate<span class="o">=</span><span class="nb">true</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>or to modify an existing service:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>ipa service-mod HTTP/proxy.s4u2.jamielennox.net@S4U2.JAMIELENNOX.NET --ok-as-delegate<span class="o">=</span><span class="nb">true</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><a name="delegation"></a>Setting up the Delegation</h2>
+
+<p>Unfortunately FreeIPA has no way to manage S4U2 delegations via the command line or GUI yet and so we must resort to editing LDAP directly.
+The s4u2 access permissions are defined from a group of services (<code>groupOfPrincipals</code>) onto a group of services.</p>
+
+<p>You can see existing delegations via:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>ldapsearch -Y GSSAPI -H ldap://ipa.s4u2.jamielennox.net -b <span class="s2">&quot;cn=s4u2proxy,cn=etc,dc=s4u2,dc=jamielennox,dc=net&quot;</span> <span class="s2">&quot;&quot;</span> <span class="s2">&quot;*&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This delegation is how the FreeIPA web service is able to use the user&rsquo;s credentials to read and write from the LDAP server so there is at least 1 existing rule that you can copy from.</p>
+
+<p>A delegation consists of two parts:</p>
+
+<ul>
+<li>A target group with a list of services (<code>memberPrincipal</code>) that are allowed to receive delegated credentials.</li>
+<li>A group (type <code>objectclass=ipaKrb5DelegationACL</code>) with a list of services (<code>memberPrincipal</code>) that are allowed to delegate credentials <em>AND</em> the target groups (<code>ipaAllowedTarget</code>) that they can delegate to.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>delegate.ldif  </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'># test-http-delegation-targets, s4u2proxy, etc, s4u2.jamielennox.net
+</span><span class='line'>dn: cn=test-http-delegation-targets,cn=s4u2proxy,cn=etc,dc=s4u2,dc=jamielennox,dc=net
+</span><span class='line'>objectClass: groupOfPrincipals
+</span><span class='line'>objectClass: top
+</span><span class='line'>cn: test-http-delegation-targets
+</span><span class='line'>memberPrincipal: HTTP/service.s4u2.jamielennox.net@S4U2.JAMIELENNOX.NET
+</span><span class='line'>
+</span><span class='line'># test-http-delegation, s4u2proxy, etc, s4u2.jamielennox.net
+</span><span class='line'>dn: cn=test-http-delegation,cn=s4u2proxy,cn=etc,dc=s4u2,dc=jamielennox,dc=net
+</span><span class='line'>objectClass: ipaKrb5DelegationACL
+</span><span class='line'>objectClass: groupOfPrincipals
+</span><span class='line'>objectClass: top
+</span><span class='line'>cn: test-http-delegation
+</span><span class='line'>memberPrincipal: HTTP/proxy.s4u2.jamielennox.net@S4U2.JAMIELENNOX.NET
+</span><span class='line'>ipaAllowedTarget: cn=test-http-delegation-targets,cn=s4u2proxy,cn=etc,dc=s4u2,dc=jamielennox,dc=net
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Write it to LDAP:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>ldapmodify -a -H ldaps://ipa.s4u2.jamielennox.net -Y GSSAPI -f delegate.ldif
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And that&rsquo;s the hard work done, the <code>HTTP/proxy.s4u2.jamielennox.net@S4U2.JAMIELENNOX.NET</code> service now has permission to delegate a received ticket to <code>HTTP/service.s4u2.jamielennox.net@S4U2.JAMIELENNOX.NET</code>.</p>
+
+<h2>Proxy</h2>
+
+<p>Registering the proxy machine is very similar.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>hostnamectl <span class="nb">set</span>-hostname proxy.s4u2.jamielennox.net
+</span><span class='line'>yum install -y ipa-client
+</span><span class='line'>vim /etc/resolv.conf  <span class="c"># set DNS server to IPA IP address</span>
+</span><span class='line'>setenforce 0
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Because the easiest way I know to test a Kerberos endpoint is with curl I am also going to write the proxy service directly in bash:</p>
+
+<figure class='code'><figcaption><span>/var/www/s4u2/index.sh </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c">#!/bin/sh</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">echo</span> <span class="s2">&quot;Content-Type: text/html; charset=UTF-8&quot;</span>
+</span><span class='line'><span class="nb">echo</span> <span class="s2">&quot;&quot;</span>
+</span><span class='line'><span class="nb">echo</span> <span class="s2">&quot;&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># simply dump the information from the service page</span>
+</span><span class='line'>curl -s --negotiate -u :  http://service.s4u2.jamielennox.net
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This works because the cgi-bin sets the request environment into the shell environment, so <code>$KRB5CCNAME</code> is set.
+If you are using mod_wsgi or other then you would have to set that into your shell environment before executing any Kerberos commands.</p>
+
+<p>I&rsquo;m going to skip the IPA client setup and fetching the keytab - this is required and done exactly the same as for the service.</p>
+
+<p>The apache configuration for the proxy is very similar to the configuration of the service except we add:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='apache'><span class='line'><span class="nb">KrbConstrainedDelegation</span> <span class="k">on</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Within the apache vhost config file to enable it to delegate a Kerberos credential.</p>
+
+<p>The final config file looks like:</p>
+
+<figure class='code'><figcaption><span>/etc/httpd/conf.d/s4u2-proxy.conf </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='apache'><span class='line'><span class="nt">&lt;VirtualHost</span> <span class="s">*:80</span><span class="nt">&gt;</span>
+</span><span class='line'>  <span class="nb">ServerName</span> proxy.s4u2.jamielennox.net
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">DocumentRoot</span> <span class="s2">&quot;/var/www/s4u2&quot;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nt">&lt;Directory</span> <span class="s">&quot;/var/www/s4u2&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nb">Options</span> Indexes FollowSymLinks MultiViews ExecCGI
+</span><span class='line'>    <span class="nb">AllowOverride</span> <span class="k">None</span>
+</span><span class='line'>    <span class="nb">AddHandler</span> cgi-script .sh
+</span><span class='line'>    <span class="nb">Require</span> <span class="k">all</span> granted
+</span><span class='line'>  <span class="nt">&lt;/Directory&gt;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nt">&lt;Location</span> <span class="s">&quot;/&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nb">AuthType</span> Kerberos
+</span><span class='line'>    <span class="nb">AuthName</span> <span class="s2">&quot;Kerberos Login&quot;</span>
+</span><span class='line'>    <span class="nb">KrbMethodNegotiate</span> <span class="k">on</span>
+</span><span class='line'>    <span class="nb">KrbMethodK5Passwd</span> <span class="k">off</span>
+</span><span class='line'>    <span class="nb">KrbServiceName</span> HTTP
+</span><span class='line'>    <span class="nb">KrbAuthRealms</span> S4U2.JAMIELENNOX.NET
+</span><span class='line'>    <span class="nb">Krb5KeyTab</span> <span class="sx">/etc/httpd/conf/httpd.keytab</span>
+</span><span class='line'>    <span class="nb">KrbSaveCredentials</span> <span class="k">on</span>
+</span><span class='line'>    <span class="nb">KrbLocalUserMapping</span> <span class="k">on</span>
+</span><span class='line'>    <span class="nb">Require</span> valid-user
+</span><span class='line'>    <span class="nb">KrbConstrainedDelegation</span> <span class="k">on</span>
+</span><span class='line'>  <span class="nt">&lt;/Location&gt;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">DirectoryIndex</span> index.sh
+</span><span class='line'><span class="nt">&lt;/VirtualHost&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Restart apache to have your changes take effect:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>systemctl restart httpd
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Voila</h2>
+
+<p>After all that aiming firefox at <code>http://proxy.s4u2.jamielennox.net</code> gives me the same <code>phpinfo</code> page I got from when I talked to the service host directly.
+You can verify from this site also that the <code>SERVER\_NAME service.s4u2.jamielennox.net</code> and that <code>REMOTE_USER</code> is <code>admin</code>.</p>
+
+<h2><a name="furtherreading"></a>Further Reading</h2>
+
+<p>There are a couple of sites that this guide is based on:</p>
+
+<ul>
+<li><a href="http://adam.younglogic.com/2014/05/s4u2proxy-horizon/">Adam Young</a> - who initially prototyped a lot of the work for horizon which we hope to have ready soon.</li>
+<li><a href="https://vda.li/en/posts/2013/07/29/Setting-up-S4U2Proxy-with-FreeIPA/">Alexander Bokovoy</a> - who is the actual authority that Adam and I are relying upon.</li>
+<li><a href="https://ssimo.org/blog/id_011.html">Simo Sorce</a> - explaining the rationale and uses for the S4U2 delegation mechanisms.</li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1626,67 +2103,6 @@ In terms of CRUD operations keystoneclient is essentially the same as other clie
 I blame this completely on the fact that region handling is awkward on the servers.
 In Juno we should have hierarchical regions and then it may make sense to allow <code>region_name</code> to be set on a session rather than per client.</p></li>
 </ul>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/02/18/dealing-with-pyc/">Dealing With .pyc</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-02-18T11:08:00+11:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>18</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>11:08 am</span></time>
-        
-         | <a href="/blog/2014/02/18/dealing-with-pyc/#disqus_thread">Comments</a>
-        
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>I have often found that when dealing with multiple branches and refactoring patches I get caught out by left over *.pyc files from python files that don&rsquo;t exist on this branch.
-This bit me again recently so I went looking for options.</p>
-
-<p>A useful environment variable that I found via some stackoverflow questions is: <a href="http://docs.python.org/2/using/cmdline.html#envvar-PYTHONDONTWRITEBYTECODE">PYTHONDONTWRITEBYTECODE</a> which, when set, prevents python from writing .pyc and .pyo files.
-This is not something that I want to set permanently on my machine but is great for development.</p>
-
-<p>The other tool I use for all my python projects is <a href="http://virtualenvwrapper.readthedocs.org/en/latest/">virtualenvwrapper</a> which allows you to isolate project dependencies and environments in what I think is a more intuitive way than with virtualenv directly.</p>
-
-<p>Armed with the simple idea that these two concepts should be able to work together I found I was not the first person to think of this.
-There are other guides out there but the basic concept is simply to set PYTHONDONTWRITEBYTECODE when we activate a virtualenv and reset it when we deactivate it.</p>
-
-<p>Easy.</p>
-
-<p>Add to <em>~/.virtualenvs/postactivate</em>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">_PYTHONDONTWRITEBYTECODE</span><span class="o">=</span><span class="nv">$PYTHONDONTWRITEBYTECODE</span>
-</span><span class='line'><span class="nb">export </span><span class="nv">PYTHONDONTWRITEBYTECODE</span><span class="o">=</span>1
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Add to <em>~/.virtualenvs/predeactivate</em>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">PYTHONDONTWRITEBYTECODE</span><span class="o">=</span><span class="nv">$_PYTHONDONTWRITEBYTECODE</span>
-</span><span class='line'><span class="nb">unset </span>_PYTHONDONTWRITEBYETCODE
-</span></code></pre></td></tr></table></div></figure>
 
 </div>
   

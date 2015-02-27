@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://www.jamielennox.net/blog/2015/02/27/setting-up-s4u2proxy/</loc>
+    <lastmod>2015-02-27T18:48:11+11:00</lastmod>
+  </url>
+  <url>
     <loc>http://www.jamielennox.net/blog/2015/02/23/v3-authentication-with-auth-token-middleware/</loc>
     <lastmod>2015-02-23T10:57:46+11:00</lastmod>
   </url>
@@ -62,10 +66,10 @@
   </url>
   <url>
     <loc>http://www.jamielennox.net/blog/archives/</loc>
-    <lastmod>2015-02-23T13:49:00+11:00</lastmod>
+    <lastmod>2015-02-27T18:50:09+11:00</lastmod>
   </url>
   <url>
     <loc>http://www.jamielennox.net/</loc>
-    <lastmod>2015-02-23T13:49:00+11:00</lastmod>
+    <lastmod>2015-02-27T18:50:09+11:00</lastmod>
   </url>
 </urlset>

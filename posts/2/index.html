@@ -9,8 +9,7 @@
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="With the Havana release of OpenStack, Keystone gains the ability to issue and verify tokens &ldquo;bound&rdquo; to some authentication mechanism.
-To &hellip;">
+  <meta name="description" content="I have often found that when dealing with multiple branches and refactoring patches I get caught out by left over *.pyc files from python files that &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -117,6 +116,67 @@ To &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/02/18/dealing-with-pyc/">Dealing With .pyc</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-02-18T11:08:00+11:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>18</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>11:08 am</span></time>
+        
+         | <a href="/blog/2014/02/18/dealing-with-pyc/#disqus_thread">Comments</a>
+        
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I have often found that when dealing with multiple branches and refactoring patches I get caught out by left over *.pyc files from python files that don&rsquo;t exist on this branch.
+This bit me again recently so I went looking for options.</p>
+
+<p>A useful environment variable that I found via some stackoverflow questions is: <a href="http://docs.python.org/2/using/cmdline.html#envvar-PYTHONDONTWRITEBYTECODE">PYTHONDONTWRITEBYTECODE</a> which, when set, prevents python from writing .pyc and .pyo files.
+This is not something that I want to set permanently on my machine but is great for development.</p>
+
+<p>The other tool I use for all my python projects is <a href="http://virtualenvwrapper.readthedocs.org/en/latest/">virtualenvwrapper</a> which allows you to isolate project dependencies and environments in what I think is a more intuitive way than with virtualenv directly.</p>
+
+<p>Armed with the simple idea that these two concepts should be able to work together I found I was not the first person to think of this.
+There are other guides out there but the basic concept is simply to set PYTHONDONTWRITEBYTECODE when we activate a virtualenv and reset it when we deactivate it.</p>
+
+<p>Easy.</p>
+
+<p>Add to <em>~/.virtualenvs/postactivate</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">_PYTHONDONTWRITEBYTECODE</span><span class="o">=</span><span class="nv">$PYTHONDONTWRITEBYTECODE</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">PYTHONDONTWRITEBYTECODE</span><span class="o">=</span>1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Add to <em>~/.virtualenvs/predeactivate</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">PYTHONDONTWRITEBYTECODE</span><span class="o">=</span><span class="nv">$_PYTHONDONTWRITEBYTECODE</span>
+</span><span class='line'><span class="nb">unset </span>_PYTHONDONTWRITEBYETCODE
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
