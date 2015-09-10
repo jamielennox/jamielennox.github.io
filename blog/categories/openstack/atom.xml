@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Openstack | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/openstack/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2015-02-27T18:50:09+11:00</updated>
+  <updated>2015-09-10T17:39:32+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,109 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[User Auth in OpenStack Services]]></title>
+    <link href="http://www.jamielennox.net/blog/2015/09/10/user-auth-in-openstack-services/"/>
+    <updated>2015-09-10T15:19:24+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2015/09/10/user-auth-in-openstack-services</id>
+    <content type="html"><![CDATA[<p>With auth plugins we are trying to ensure that an individual OpenStack service (like Nova or Glance) should never have to deal with the details of authentication.
+One of the improvements we&rsquo;ve made that has gone largely unnoticed is the addition of the <strong>keystone.token_auth</strong> authentication plugin that is passed down in a request&rsquo;s environment variables from auth_token middleware.
+This object is a full authentication plugin that uses the token and service catalog of the user that was just validated so that the service does the right thing without having to figure out keystone&rsquo;s token format.</p>
+
+<p>This means that service to service communication is as simple as:</p>
+
+<pre><code class="python">from glanceclient import client
+import json
+from keystoneclient import session
+from keystonemiddleware import auth_token
+from oslo_config import cfg
+import webob.dec
+from wsgiref import simple_server
+
+cfg.CONF(project='testservice')
+
+session.Session.register_conf_options(cfg.CONF, 'communication')
+SESSION = session.Session.load_from_conf_options(cfg.CONF, 'communication')
+
+
+@webob.dec.wsgify
+def app(req):
+    glance = client.Client('2',
+                           session=SESSION,
+                           auth=req.environ['keystone.token_auth'])
+
+    return webob.Response(json.dumps([i.name for i in glance.images.list()]))
+
+
+app = auth_token.AuthProtocol(app, {})
+server = simple_server.make_server('', 8000, app)
+server.serve_forever()
+</code></pre>
+
+<p>This is a full service that responds to every request with a JSON formatted list of image names in your project which is not all that useful but proves a point. There are some things to notice:</p>
+
+<h4>The session is global.</h4>
+
+<p>There are two ways to use a session with authentication.</p>
+
+<ul>
+<li>If you are writing something like a CLI application then you will want to use the same authentication for the lifetime of the program and it can be easier to just pass an auth plugin to the sesion constructor and forget about it.</li>
+<li>If you are writing a service that wants to use many different authentications over its lifetime you can pass the auth directly to the client that will consume it.</li>
+</ul>
+
+
+<p>In our case we want to re-use the session for benefits like connection pooling and caching, but we will often change the authentication being used so we pass the plugin to the client directly.
+The session is thread safe and is able to be reused across requests like this.
+Consider this to be splitting the application context and the request context.</p>
+
+<h4>We create the glanceclient just in time.</h4>
+
+<p>As a very small application this isn&rsquo;t obvious however because all the caching and authentication logic is being handled by the session and plugin there is no reason to keep a client around.
+Clients become very cheap to create and so in most situations you can use a client object within a function and then discard it.</p>
+
+<h4>We never entered a URL for Glance.</h4>
+
+<p>At no point did we have to provide a URL for glance in the config file.
+If on any project you encounter you have to enter a fixed URL to communicate with another service please file a bug.
+Keystone tokens have a service catalog in them so that all requests made on behalf of a user go to the appropriate URL.
+In the past this was a relatively ugly affair involving parsing the information from dictionaries, however this is all encapsulated into the auth plugin now.</p>
+
+<h4>There is additional information on the plugin</h4>
+
+<p>Whilst not shown in the example the auth_plugin has the following attributes:</p>
+
+<ul>
+<li>user.auth_token</li>
+<li>user.user_id</li>
+<li>user.user_domain_id</li>
+<li>user.project_id</li>
+<li>user.project_domain_id</li>
+<li>user.trust_id</li>
+<li>user.role_names</li>
+</ul>
+
+
+<p>If you are storing the auth plugin in a context using these accessors can be much easier that trying to figure out the variables that auth_token middleware also set.</p>
+
+<h4>You can&rsquo;t serialize the auth plugin.</h4>
+
+<p>In the case of Nova and others the auth_token middleware check is performed on the API service however most service communication is done in a backend service.
+We currently have no way of serializing the plugin to an oslo.context so it is reconstructed on the backend.
+This is something we are working on.</p>
+
+<h4>It&rsquo;s available now</h4>
+
+<p>Going back to look at the initial review it is 5 days shy of 1 year old (merged 2014-09-15).
+There have been improvements since then however the basic functionality has been out for a while and is available in the current minimum global requirements.
+Glanceclient on the other hand has only had session support since the 1.0 release (2015-08-31) so you will need a recent version to test the example.</p>
+
+<h2>Conclusion</h2>
+
+<p>We are doing all we can to prevent services ever having to deal with the details of authentication in OpenStack.
+If your project has still not adopted plugins please come find us in #openstack-keystone on freenode as it&rsquo;s currently making your life more difficult.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[V3 Authentication With Auth_token Middleware]]></title>
@@ -105,12 +208,12 @@ from oslo.config import cfg
 
 cfg.CONF(sys.argv[1:])
 
-auth.register_conf_options(cfg.CONF, 'somegroup')
-session.Session.register_conf_options(cfg.CONF, 'somegroup')
+auth.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
+session.Session.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
 
-plugin = auth.load_from_conf_options(cfg.CONF, 'somegroup')
+plugin = auth.load_from_conf_options(cfg.CONF, &#39;somegroup&#39;)
 sess = session.Session.load_from_conf_options(cfg.CONF,
-                                              'somegroup',
+                                              &#39;somegroup&#39;,
                                               auth=plugin)
 </code></pre></noscript></div>
 </p>
@@ -175,7 +278,7 @@ import sys
 from keystoneclient import auth
 from keystoneclient import session
 
-parser = argparse.ArgumentParser('myapp')
+parser = argparse.ArgumentParser(&#39;myapp&#39;)
 
 auth.register_argparse_arguments(parser, sys.argv[1:])
 session.Session.register_cli_options(parser)
@@ -269,7 +372,7 @@ The following is a fairly simple script that lists all the plugins that are inst
 <p><div><script src='https://gist.github.com/7f5cfabd64a6922e643c.js?file=list-plugins.py'></script>
 <noscript><pre><code>import stevedore
 
-mgr = stevedore.ExtensionManager(namespace='keystoneclient.auth.plugin',
+mgr = stevedore.ExtensionManager(namespace=&#39;keystoneclient.auth.plugin&#39;,
                                  invoke_on_load=False)
 
 def print_plugin(ext):
@@ -722,8 +825,8 @@ Then we fetch the keytab and put it somewhere apache can access it.</p>
 <p><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="gp">[root@openstack]# ipa service-add HTTP/&lt;a href=&quot;&amp;#109;&amp;#x61;&amp;#105;&amp;#x6c;&amp;#116;&amp;#x6f;&amp;#x3a;&amp;#111;&amp;#112;&amp;#101;&amp;#x6e;&amp;#115;&amp;#x74;&amp;#x61;&amp;#99;&amp;#x6b;&amp;#x2e;&amp;#116;&amp;#x65;&amp;#115;&amp;#x74;&amp;#46;&amp;#106;&amp;#x61;&amp;#x6d;&amp;#x69;&amp;#101;&amp;#x6c;&amp;#101;&amp;#x6e;&amp;#110;&amp;#111;&amp;#120;&amp;#46;&amp;#110;&amp;#x65;&amp;#x74;&amp;#x40;&amp;#x54;&amp;#69;&amp;#x53;&amp;#x54;&amp;#46;&amp;#x4a;&amp;#65;&amp;#77;&amp;#73;&amp;#x45;&amp;#x4c;&amp;#69;&amp;#x4e;&amp;#78;&amp;#79;&amp;#x58;&amp;#x2e;&amp;#78;&amp;#69;&amp;#x54;&quot;&gt;&amp;#x6f;&amp;#x70;&amp;#101;&amp;#x6e;&amp;#x73;&amp;#x74;&amp;#x61;&amp;#x63;&amp;#107;&amp;#x2e;&amp;#x74;&amp;#x65;&amp;#x73;&amp;#116;&amp;#46;&amp;#x6a;&amp;#x61;&amp;#109;&amp;#x69;&amp;#101;&amp;#108;&amp;#101;&amp;#110;&amp;#x6e;&amp;#111;&amp;#120;&amp;#x2e;&amp;#x6e;&amp;#101;&amp;#x74;&amp;#x40;&amp;#84;&amp;#69;&amp;#x53;&amp;#x54;&amp;#46;&amp;#74;&amp;#x41;&amp;#x4d;&amp;#73;&amp;#69;&amp;#76;&amp;#69;&amp;#x4e;&amp;#x4e;&amp;#79;&amp;#88;&amp;#46;&amp;#x4e;&amp;#x45;&amp;#</span>84<span class="p">;</span>&lt;/a&gt;
-</span><span class='line'><span class="gp">[root@openstack]# ipa-getkeytab -s ipa.test.jamielennox.net -p HTTP/&lt;a href=&quot;&amp;#x6d;&amp;#97;&amp;#105;&amp;#108;&amp;#116;&amp;#x6f;&amp;#x3a;&amp;#111;&amp;#x70;&amp;#x65;&amp;#x6e;&amp;#x73;&amp;#x74;&amp;#97;&amp;#x63;&amp;#x6b;&amp;#x2e;&amp;#116;&amp;#x65;&amp;#x73;&amp;#116;&amp;#x2e;&amp;#x6a;&amp;#x61;&amp;#109;&amp;#105;&amp;#x65;&amp;#x6c;&amp;#x65;&amp;#110;&amp;#x6e;&amp;#111;&amp;#120;&amp;#46;&amp;#110;&amp;#x65;&amp;#x74;&amp;#64;&amp;#x54;&amp;#69;&amp;#x53;&amp;#84;&amp;#46;&amp;#74;&amp;#65;&amp;#x4d;&amp;#73;&amp;#x45;&amp;#x4c;&amp;#x45;&amp;#x4e;&amp;#x4e;&amp;#79;&amp;#88;&amp;#46;&amp;#x4e;&amp;#69;&amp;#x54;&quot;&gt;&amp;#111;&amp;#x70;&amp;#x65;&amp;#x6e;&amp;#x73;&amp;#116;&amp;#x61;&amp;#99;&amp;#x6b;&amp;#46;&amp;#116;&amp;#101;&amp;#x73;&amp;#x74;&amp;#46;&amp;#x6a;&amp;#x61;&amp;#109;&amp;#105;&amp;#x65;&amp;#108;&amp;#x65;&amp;#110;&amp;#x6e;&amp;#111;&amp;#x78;&amp;#x2e;&amp;#110;&amp;#101;&amp;#116;&amp;#x40;&amp;#84;&amp;#x45;&amp;#83;&amp;#x54;&amp;#x2e;&amp;#74;&amp;#x41;&amp;#x4d;&amp;#x49;&amp;#x45;&amp;#x4c;&amp;#x45;&amp;#78;&amp;#78;&amp;#x4f;&amp;#x58;&amp;#x2e;&amp;#78;&amp;#x45;&amp;#</span>x54<span class="p">;</span>&lt;/a&gt; -k /etc/httpd/conf/httpd.keytab
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="gp">[root@openstack]# ipa service-add HTTP/&lt;a href=&quot;&amp;#x6d;&amp;#97;&amp;#x69;&amp;#108;&amp;#116;&amp;#111;&amp;#x3a;&amp;#x6f;&amp;#112;&amp;#x65;&amp;#x6e;&amp;#x73;&amp;#116;&amp;#x61;&amp;#99;&amp;#x6b;&amp;#46;&amp;#116;&amp;#x65;&amp;#x73;&amp;#x74;&amp;#46;&amp;#106;&amp;#97;&amp;#109;&amp;#x69;&amp;#x65;&amp;#108;&amp;#x65;&amp;#x6e;&amp;#x6e;&amp;#111;&amp;#x78;&amp;#46;&amp;#110;&amp;#101;&amp;#116;&amp;#x40;&amp;#x54;&amp;#69;&amp;#83;&amp;#84;&amp;#x2e;&amp;#x4a;&amp;#x41;&amp;#x4d;&amp;#73;&amp;#69;&amp;#76;&amp;#69;&amp;#x4e;&amp;#x4e;&amp;#79;&amp;#88;&amp;#x2e;&amp;#78;&amp;#x45;&amp;#84;&quot;&gt;&amp;#111;&amp;#112;&amp;#x65;&amp;#x6e;&amp;#115;&amp;#x74;&amp;#97;&amp;#x63;&amp;#x6b;&amp;#46;&amp;#116;&amp;#101;&amp;#x73;&amp;#x74;&amp;#46;&amp;#106;&amp;#97;&amp;#x6d;&amp;#105;&amp;#101;&amp;#x6c;&amp;#101;&amp;#110;&amp;#x6e;&amp;#x6f;&amp;#120;&amp;#x2e;&amp;#110;&amp;#101;&amp;#116;&amp;#64;&amp;#84;&amp;#69;&amp;#83;&amp;#84;&amp;#46;&amp;#x4a;&amp;#65;&amp;#x4d;&amp;#73;&amp;#69;&amp;#76;&amp;#69;&amp;#x4e;&amp;#x4e;&amp;#79;&amp;#88;&amp;#x2e;&amp;#x4e;&amp;#69;&amp;#</span>x54<span class="p">;</span>&lt;/a&gt;
+</span><span class='line'><span class="gp">[root@openstack]# ipa-getkeytab -s ipa.test.jamielennox.net -p HTTP/&lt;a href=&quot;&amp;#x6d;&amp;#97;&amp;#105;&amp;#108;&amp;#x74;&amp;#111;&amp;#x3a;&amp;#x6f;&amp;#x70;&amp;#x65;&amp;#x6e;&amp;#x73;&amp;#x74;&amp;#x61;&amp;#x63;&amp;#x6b;&amp;#46;&amp;#x74;&amp;#x65;&amp;#115;&amp;#116;&amp;#x2e;&amp;#106;&amp;#x61;&amp;#109;&amp;#105;&amp;#x65;&amp;#x6c;&amp;#101;&amp;#x6e;&amp;#110;&amp;#x6f;&amp;#x78;&amp;#46;&amp;#x6e;&amp;#101;&amp;#x74;&amp;#64;&amp;#x54;&amp;#69;&amp;#x53;&amp;#x54;&amp;#x2e;&amp;#74;&amp;#65;&amp;#x4d;&amp;#x49;&amp;#x45;&amp;#76;&amp;#69;&amp;#x4e;&amp;#78;&amp;#x4f;&amp;#88;&amp;#46;&amp;#x4e;&amp;#69;&amp;#x54;&quot;&gt;&amp;#111;&amp;#112;&amp;#x65;&amp;#x6e;&amp;#x73;&amp;#116;&amp;#x61;&amp;#99;&amp;#x6b;&amp;#46;&amp;#116;&amp;#101;&amp;#115;&amp;#x74;&amp;#x2e;&amp;#106;&amp;#x61;&amp;#109;&amp;#x69;&amp;#x65;&amp;#x6c;&amp;#x65;&amp;#x6e;&amp;#110;&amp;#111;&amp;#x78;&amp;#46;&amp;#110;&amp;#101;&amp;#x74;&amp;#x40;&amp;#x54;&amp;#x45;&amp;#83;&amp;#84;&amp;#x2e;&amp;#x4a;&amp;#x41;&amp;#x4d;&amp;#73;&amp;#69;&amp;#76;&amp;#69;&amp;#78;&amp;#x4e;&amp;#79;&amp;#88;&amp;#x2e;&amp;#78;&amp;#x45;&amp;#</span>84<span class="p">;</span>&lt;/a&gt; -k /etc/httpd/conf/httpd.keytab
 </span><span class='line'><span class="go">[root@openstack]# chown apache: /etc/httpd/conf/httpd.keytab</span>
 </span></code></pre></td></tr></table></div></figure></p>
 
@@ -888,190 +991,6 @@ It happened today and so I thought I should clarify:</p>
 
 <p>However the fundamental model, that this opaque chunk of data in the &lsquo;X-Auth-Token&rsquo; header indicates that this request is authenticated does not change between PKI and UUID tokens.
 If someone steals your PKI token you are just as screwed as if they stole your UUID token.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How to Use Keystoneclient Sessions]]></title>
-    <link href="http://www.jamielennox.net/blog/2014/09/15/how-to-use-keystoneclient-sessions/"/>
-    <updated>2014-09-15T09:13:36+10:00</updated>
-    <id>http://www.jamielennox.net/blog/2014/09/15/how-to-use-keystoneclient-sessions</id>
-    <content type="html"><![CDATA[<p>In the last post I did on keystoneclient sessions there was a lot of hand waving about how they should work but it&rsquo;s not merged yet.
-Standardizing clients has received some more attention again recently - and now that the sessions are more mature and ready it seems like a good opportunity to explain them and how to use them again.</p>
-
-<p>For those of you new to this area the clients have grown very organically, generally forking off some existing client and adding and removing features in ways that worked for that project.
-Whilst this is in general a problem for user experience (try to get one token and use it with multiple clients without reauthenticating) it is a nightmare for security fixes and new features as they need to be applied individually across each client.</p>
-
-<p>Sessions are an attempt to extract a common authentication and communication layer from the existing clients so that we can handle transport security once, and keystone and deployments can add new authentication mechanisms without having to do it for every client.</p>
-
-<h2>The Basics</h2>
-
-<p>Sessions and authentications are user facing objects that you create and pass to a client, they are public objects not a framework for the existing clients.
-They require a change in how you instantiate clients.</p>
-
-<p>The first step is to create an authentication plugin, currently the available plugins are:</p>
-
-<ul>
-<li><code>keystoneclient.auth.identity.v2.Password</code></li>
-<li><code>keystoneclient.auth.identity.v2.Token</code></li>
-<li><code>keystoneclient.auth.identity.v3.Password</code></li>
-<li><code>keystoneclient.auth.identity.v3.Token</code></li>
-<li><code>keystoneclient.auth.token_endpoint.Token</code></li>
-</ul>
-
-
-<p>For the primary user/password and token authentication mechanisms that keystone supports in v2 and v3 and for the test case where you know the endpoint and token in advance.
-The parameters will vary depending upon what is required to authenticate with each.</p>
-
-<p>Plugins don&rsquo;t need to live in the keystoneclient, we are currently in the process of setting up a new repository for kerberos authentication so that it will be an optional dependency.
-There are also some plugins living in the contrib section of keystoneclient for federation that will also likely be moved to a new repository soon.</p>
-
-<p>You can then create a session with that plugin.</p>
-
-<pre><code class="python">
-from keystoneclient import session as ksc_session
-from keystoneclient.auth.identity import v3
-from keystoneclient.v3 import client as keystone_v3
-from novaclient.v1_1 import client as nova_v2
-
-auth = v3.Password(auth_url='http://keystone.host/v3',
-                   username='user',
-                   password='password',
-                   project_name='demo',
-                   user_domain_name='default',
-                   project_domain_name='default')
-
-session = ksc_session.Session(auth=auth,
-                              verify='/path/to/ca.cert')
-
-keystone = keystone_v3.Client(session=session)
-nova = nova_v2.Client(session=session)
-</code></pre>
-
-<p>Keystone and nova clients will now share an authentication token fetched with keystone&rsquo;s v3 authentication.
-The clients will authenticate on the first request and will re-authenticate automatically when the token expires.</p>
-
-<p>This is a fundamental shift from the existing clients that would authenticate internally to the client and on creation so by opting to use sessions you are acknowledging that some methods won&rsquo;t work like they used to.
-For example keystoneclient had an <code>authenticate()</code> function that would save the details of the authentication (user_id etc) on the client object.
-This process is no longer controlled by keystoneclient and so this function should not be used, however it also cannot be removed because we need to remain backwards compatible with existing client code.</p>
-
-<p>In converting the existing clients we consider that passing a Session means that you are acknowledging that you are using new code and are opting-in to the new behaviour.
-This will not affect 90% of users who just make calls to the APIs, however if you have got hacks in place to share tokens between the existing clients or you overwrite variables on the clients to force different behaviours then these will probably be broken.</p>
-
-<h2>Per-Client Authentication</h2>
-
-<p>The above flow is useful for users where they want to have there one token shared between one or more clients.
-If you are are an application that uses many authentication plugins (eg, heat or horizon) you may want to take advantage of using a single session&rsquo;s connection pooling or caching whilst juggling multiple authentications.
-You can therefore create a session without an authentication plugin and specify the plugin that will be used with that client instance, for example:</p>
-
-<pre><code class="python">global SESSION
-
-if not SESSION:
-    SESSION = ksc_session.Session()
-
-auth = get_auth_plugin()  # you could deserialize it from a db,
-                          # fetch it based on a cookie value...
-keystone = keystone_v3.Client(session=SESSION, auth=auth)
-</code></pre>
-
-<p>Auth plugins set on the client will override any auth plugin set on the session - but I&rsquo;d recommend you pick one method based on your application&rsquo;s needs and stick with it.</p>
-
-<h2>Loading from a config file</h2>
-
-<p>There is support for loading session and authentication plugins from and oslo.config CONF object.
-The documentation on exactly what options are supported is lacking right now and you will probably need to look at code to figure out everything that is supported.
-I promise to improve this, but to get you started you need to register the options globally:</p>
-
-<pre><code class="python">group = 'keystoneclient'  # the option group
-keystoneclient.session.Session.register_conf_options(CONF, group)
-keystoneclient.auth.register_conf_options(CONF, group)
-</code></pre>
-
-<p>And then load the objects where you need them:</p>
-
-<pre><code class="python">auth = keystoneclient.auth.load_from_conf_options(CONF, group)
-session = ksc_session.Session.load_from_conf_options(CONF, group, auth=auth)
-keystone = keystone_v3.Client(session=session)
-</code></pre>
-
-<p>Will load options that look like:</p>
-
-<pre><code class="ini">[keystoneclient]
-cacert = /path/to/ca.cert
-auth_plugin = v3password
-username = user
-password = password
-project_name = demo
-project_domain_name = default
-user_domain_name = default
-</code></pre>
-
-<p>There is also support for transitioning existing code bases to new option names if they are not the same as what your application uses.</p>
-
-<h2>Loading from CLI</h2>
-
-<p>A very similar process is used to load sessions and plugins from an argparse parser.</p>
-
-<pre><code class="python">
-parser = argparse.ArgumentParser('test')
-
-argv = sys.argv[1:]
-
-keystoneclient.session.Session.register_cli_options(parser)
-keystoneclient.auth.register_argparse_arguments(parser, argv)
-
-args = parser.parse_args(argv)
-
-auth = keystoneclient.auth.load_from_argparse_arguments(args)
-session = keystoneclient.session.Session.load_from_cli_options(args,
-                                                               auth=auth)
-</code></pre>
-
-<p>This produces an application with the following options:</p>
-
-<pre><code class="bash">python test.py --os-auth-plugin v3password
-usage: test [-h] [--insecure] [--os-cacert &lt;ca-certificate&gt;]
-            [--os-cert &lt;certificate&gt;] [--os-key &lt;key&gt;] [--timeout &lt;seconds&gt;]
-            [--os-auth-plugin &lt;name&gt;] [--os-auth-url OS_AUTH_URL]
-            [--os-domain-id OS_DOMAIN_ID] [--os-domain-name OS_DOMAIN_NAME]
-            [--os-project-id OS_PROJECT_ID]
-            [--os-project-name OS_PROJECT_NAME]
-            [--os-project-domain-id OS_PROJECT_DOMAIN_ID]
-            [--os-project-domain-name OS_PROJECT_DOMAIN_NAME]
-            [--os-trust-id OS_TRUST_ID] [--os-user-id OS_USER_ID]
-            [--os-user-name OS_USERNAME]
-            [--os-user-domain-id OS_USER_DOMAIN_ID]
-            [--os-user-domain-name OS_USER_DOMAIN_NAME]
-            [--os-password OS_PASSWORD]
-</code></pre>
-
-<p>There is an ongoing effort to create a standardized CLI plugin that can be used by new clients rather than have people provide an &ndash;os-auth-plugin every time.
-It is not yet ready, however clients can create and specify there own default plugins if &ndash;os-auth-plugin is not provided.</p>
-
-<h2>For Client Authors</h2>
-
-<p>To make use of the session in your client there is the <code>keystoneclient.adapter.Adapter</code> which provides you with a set of standard variables that your client should take and use with the session.
-The adapter will handle the per-client authentication plugins, handle <code>region_name</code>, <code>interface</code>, <code>user_agent</code> and similar client parameters that are not part of the more global (across many clients) state that sessions hold.</p>
-
-<p>The basic client should look like:</p>
-
-<pre><code>class MyClient(object):
-
-    def __init__(self, **kwargs):
-        kwargs.set_default('user_agent', 'python-myclient')
-        kwargs.set_default('service_type', 'my')
-        self.http = keystoneclient.adapter.Adapter(**kwargs)
-</code></pre>
-
-<p>The adapter then has <code>.get()</code> and <code>.post()</code> and other http methods that the clients expect.</p>
-
-<h2>Conclusion</h2>
-
-<p>It&rsquo;s great to have renewed interest in standardizing client behaviour, and I&rsquo;m thrilled to see better session adoption.
-The code has matured to the point it is usable and simplifies use for both users and client authors.</p>
-
-<p>In writing this I kept wanting to link out to official documentation and realized just how lacking it really is.
-Some explanation is available on the <a href="http://docs.openstack.org/developer/python-keystoneclient/using-sessions.html">official python-keystoneclient docs pages</a>, there is also <a href="http://docs.openstack.org/developer/python-keystoneclient/api/keystoneclient.auth.identity.html">module documentation</a> however this is definetly an area in which we (read I) am a long way behind.</p>
 ]]></content>
   </entry>
   

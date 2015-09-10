@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Keystone | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/keystone/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2015-02-27T18:50:09+11:00</updated>
+  <updated>2015-09-10T17:39:32+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,109 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[User Auth in OpenStack Services]]></title>
+    <link href="http://www.jamielennox.net/blog/2015/09/10/user-auth-in-openstack-services/"/>
+    <updated>2015-09-10T15:19:24+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2015/09/10/user-auth-in-openstack-services</id>
+    <content type="html"><![CDATA[<p>With auth plugins we are trying to ensure that an individual OpenStack service (like Nova or Glance) should never have to deal with the details of authentication.
+One of the improvements we&rsquo;ve made that has gone largely unnoticed is the addition of the <strong>keystone.token_auth</strong> authentication plugin that is passed down in a request&rsquo;s environment variables from auth_token middleware.
+This object is a full authentication plugin that uses the token and service catalog of the user that was just validated so that the service does the right thing without having to figure out keystone&rsquo;s token format.</p>
+
+<p>This means that service to service communication is as simple as:</p>
+
+<pre><code class="python">from glanceclient import client
+import json
+from keystoneclient import session
+from keystonemiddleware import auth_token
+from oslo_config import cfg
+import webob.dec
+from wsgiref import simple_server
+
+cfg.CONF(project='testservice')
+
+session.Session.register_conf_options(cfg.CONF, 'communication')
+SESSION = session.Session.load_from_conf_options(cfg.CONF, 'communication')
+
+
+@webob.dec.wsgify
+def app(req):
+    glance = client.Client('2',
+                           session=SESSION,
+                           auth=req.environ['keystone.token_auth'])
+
+    return webob.Response(json.dumps([i.name for i in glance.images.list()]))
+
+
+app = auth_token.AuthProtocol(app, {})
+server = simple_server.make_server('', 8000, app)
+server.serve_forever()
+</code></pre>
+
+<p>This is a full service that responds to every request with a JSON formatted list of image names in your project which is not all that useful but proves a point. There are some things to notice:</p>
+
+<h4>The session is global.</h4>
+
+<p>There are two ways to use a session with authentication.</p>
+
+<ul>
+<li>If you are writing something like a CLI application then you will want to use the same authentication for the lifetime of the program and it can be easier to just pass an auth plugin to the sesion constructor and forget about it.</li>
+<li>If you are writing a service that wants to use many different authentications over its lifetime you can pass the auth directly to the client that will consume it.</li>
+</ul>
+
+
+<p>In our case we want to re-use the session for benefits like connection pooling and caching, but we will often change the authentication being used so we pass the plugin to the client directly.
+The session is thread safe and is able to be reused across requests like this.
+Consider this to be splitting the application context and the request context.</p>
+
+<h4>We create the glanceclient just in time.</h4>
+
+<p>As a very small application this isn&rsquo;t obvious however because all the caching and authentication logic is being handled by the session and plugin there is no reason to keep a client around.
+Clients become very cheap to create and so in most situations you can use a client object within a function and then discard it.</p>
+
+<h4>We never entered a URL for Glance.</h4>
+
+<p>At no point did we have to provide a URL for glance in the config file.
+If on any project you encounter you have to enter a fixed URL to communicate with another service please file a bug.
+Keystone tokens have a service catalog in them so that all requests made on behalf of a user go to the appropriate URL.
+In the past this was a relatively ugly affair involving parsing the information from dictionaries, however this is all encapsulated into the auth plugin now.</p>
+
+<h4>There is additional information on the plugin</h4>
+
+<p>Whilst not shown in the example the auth_plugin has the following attributes:</p>
+
+<ul>
+<li>user.auth_token</li>
+<li>user.user_id</li>
+<li>user.user_domain_id</li>
+<li>user.project_id</li>
+<li>user.project_domain_id</li>
+<li>user.trust_id</li>
+<li>user.role_names</li>
+</ul>
+
+
+<p>If you are storing the auth plugin in a context using these accessors can be much easier that trying to figure out the variables that auth_token middleware also set.</p>
+
+<h4>You can&rsquo;t serialize the auth plugin.</h4>
+
+<p>In the case of Nova and others the auth_token middleware check is performed on the API service however most service communication is done in a backend service.
+We currently have no way of serializing the plugin to an oslo.context so it is reconstructed on the backend.
+This is something we are working on.</p>
+
+<h4>It&rsquo;s available now</h4>
+
+<p>Going back to look at the initial review it is 5 days shy of 1 year old (merged 2014-09-15).
+There have been improvements since then however the basic functionality has been out for a while and is available in the current minimum global requirements.
+Glanceclient on the other hand has only had session support since the 1.0 release (2015-08-31) so you will need a recent version to test the example.</p>
+
+<h2>Conclusion</h2>
+
+<p>We are doing all we can to prevent services ever having to deal with the details of authentication in OpenStack.
+If your project has still not adopted plugins please come find us in #openstack-keystone on freenode as it&rsquo;s currently making your life more difficult.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[V3 Authentication With Auth_token Middleware]]></title>
@@ -105,12 +208,12 @@ from oslo.config import cfg
 
 cfg.CONF(sys.argv[1:])
 
-auth.register_conf_options(cfg.CONF, 'somegroup')
-session.Session.register_conf_options(cfg.CONF, 'somegroup')
+auth.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
+session.Session.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
 
-plugin = auth.load_from_conf_options(cfg.CONF, 'somegroup')
+plugin = auth.load_from_conf_options(cfg.CONF, &#39;somegroup&#39;)
 sess = session.Session.load_from_conf_options(cfg.CONF,
-                                              'somegroup',
+                                              &#39;somegroup&#39;,
                                               auth=plugin)
 </code></pre></noscript></div>
 </p>
@@ -175,7 +278,7 @@ import sys
 from keystoneclient import auth
 from keystoneclient import session
 
-parser = argparse.ArgumentParser('myapp')
+parser = argparse.ArgumentParser(&#39;myapp&#39;)
 
 auth.register_argparse_arguments(parser, sys.argv[1:])
 session.Session.register_cli_options(parser)
@@ -269,7 +372,7 @@ The following is a fairly simple script that lists all the plugins that are inst
 <p><div><script src='https://gist.github.com/7f5cfabd64a6922e643c.js?file=list-plugins.py'></script>
 <noscript><pre><code>import stevedore
 
-mgr = stevedore.ExtensionManager(namespace='keystoneclient.auth.plugin',
+mgr = stevedore.ExtensionManager(namespace=&#39;keystoneclient.auth.plugin&#39;,
                                  invoke_on_load=False)
 
 def print_plugin(ext):
@@ -526,41 +629,6 @@ The code has matured to the point it is usable and simplifies use for both users
 
 <p>In writing this I kept wanting to link out to official documentation and realized just how lacking it really is.
 Some explanation is available on the <a href="http://docs.openstack.org/developer/python-keystoneclient/using-sessions.html">official python-keystoneclient docs pages</a>, there is also <a href="http://docs.openstack.org/developer/python-keystoneclient/api/keystoneclient.auth.identity.html">module documentation</a> however this is definetly an area in which we (read I) am a long way behind.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Identity_uri in Auth Token Middleware]]></title>
-    <link href="http://www.jamielennox.net/blog/2014/05/21/identity-uri-in-auth-token-middleware/"/>
-    <updated>2014-05-21T14:54:00+10:00</updated>
-    <id>http://www.jamielennox.net/blog/2014/05/21/identity-uri-in-auth-token-middleware</id>
-    <content type="html"><![CDATA[<p>As part of the 0.8 release of keystoneclient (2014-04-17) we made an update to the way that you configure auth_token middleware in OpenStack.</p>
-
-<p>Previously you specify the path to the keystone server as a number of individual parameters such as:</p>
-
-<pre><code>[keystone_authtoken]
-auth_protocol = http
-auth_port = 35357
-auth_host = 127.0.0.1
-auth_admin_prefix =
-</code></pre>
-
-<p>This made sense in code when using httplib for communication where you use each of those independent pieces.
-However we removed httplib a number of releases ago and now simply reconstruct the full URL in code in the form:</p>
-
-<pre><code>%(auth_protocol)s://%(auth_host)s:%(auth_port)d/%(auth_admin_prefix)s
-</code></pre>
-
-<p>This format is much more intuitive for configuration and so should now be used with the key <strong>identity_uri</strong>. e.g.</p>
-
-<pre><code>[keystone_authtoken]
-identity_uri = http://127.0.0.1:35357
-</code></pre>
-
-<p>Using the original format will continue to work but you&rsquo;ll see a deprecation message like:</p>
-
-<pre><code>WARNING keystoneclient.middleware.auth_token [-] Configuring admin URI using auth fragments. This is deprecated, use 'identity_uri' instead.
-</code></pre>
 ]]></content>
   </entry>
   

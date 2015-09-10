@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2015-02-27T18:50:09+11:00</updated>
+  <updated>2015-09-10T17:39:32+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,136 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[User Auth in OpenStack Services]]></title>
+    <link href="http://www.jamielennox.net/blog/2015/09/10/user-auth-in-openstack-services/"/>
+    <updated>2015-09-10T15:19:24+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2015/09/10/user-auth-in-openstack-services</id>
+    <content type="html"><![CDATA[<p>With auth plugins we are trying to ensure that an individual OpenStack service (like Nova or Glance) should never have to deal with the details of authentication.
+One of the improvements we&rsquo;ve made that has gone largely unnoticed is the addition of the <strong>keystone.token_auth</strong> authentication plugin that is passed down in a request&rsquo;s environment variables from auth_token middleware.
+This object is a full authentication plugin that uses the token and service catalog of the user that was just validated so that the service does the right thing without having to figure out keystone&rsquo;s token format.</p>
+
+<p>This means that service to service communication is as simple as:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">glanceclient</span> <span class="kn">import</span> <span class="n">client</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">json</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystoneclient</span> <span class="kn">import</span> <span class="n">session</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystonemiddleware</span> <span class="kn">import</span> <span class="n">auth_token</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">oslo_config</span> <span class="kn">import</span> <span class="n">cfg</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">webob.dec</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">wsgiref</span> <span class="kn">import</span> <span class="n">simple_server</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cfg</span><span class="o">.</span><span class="n">CONF</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="s">&#39;testservice&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">register_conf_options</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">CONF</span><span class="p">,</span> <span class="s">&#39;communication&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">SESSION</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">load_from_conf_options</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">CONF</span><span class="p">,</span> <span class="s">&#39;communication&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@webob.dec.wsgify</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">app</span><span class="p">(</span><span class="n">req</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">glance</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="s">&#39;2&#39;</span><span class="p">,</span>
+</span><span class='line'>                           <span class="n">session</span><span class="o">=</span><span class="n">SESSION</span><span class="p">,</span>
+</span><span class='line'>                           <span class="n">auth</span><span class="o">=</span><span class="n">req</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;keystone.token_auth&#39;</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">webob</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">glance</span><span class="o">.</span><span class="n">images</span><span class="o">.</span><span class="n">list</span><span class="p">()]))</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="n">app</span> <span class="o">=</span> <span class="n">auth_token</span><span class="o">.</span><span class="n">AuthProtocol</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="p">{})</span>
+</span><span class='line'><span class="n">server</span> <span class="o">=</span> <span class="n">simple_server</span><span class="o">.</span><span class="n">make_server</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="mi">8000</span><span class="p">,</span> <span class="n">app</span><span class="p">)</span>
+</span><span class='line'><span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is a full service that responds to every request with a JSON formatted list of image names in your project which is not all that useful but proves a point. There are some things to notice:</p>
+
+<h4>The session is global.</h4>
+
+<p>There are two ways to use a session with authentication.</p>
+
+<ul>
+<li>If you are writing something like a CLI application then you will want to use the same authentication for the lifetime of the program and it can be easier to just pass an auth plugin to the sesion constructor and forget about it.</li>
+<li>If you are writing a service that wants to use many different authentications over its lifetime you can pass the auth directly to the client that will consume it.</li>
+</ul>
+
+
+<p>In our case we want to re-use the session for benefits like connection pooling and caching, but we will often change the authentication being used so we pass the plugin to the client directly.
+The session is thread safe and is able to be reused across requests like this.
+Consider this to be splitting the application context and the request context.</p>
+
+<h4>We create the glanceclient just in time.</h4>
+
+<p>As a very small application this isn&rsquo;t obvious however because all the caching and authentication logic is being handled by the session and plugin there is no reason to keep a client around.
+Clients become very cheap to create and so in most situations you can use a client object within a function and then discard it.</p>
+
+<h4>We never entered a URL for Glance.</h4>
+
+<p>At no point did we have to provide a URL for glance in the config file.
+If on any project you encounter you have to enter a fixed URL to communicate with another service please file a bug.
+Keystone tokens have a service catalog in them so that all requests made on behalf of a user go to the appropriate URL.
+In the past this was a relatively ugly affair involving parsing the information from dictionaries, however this is all encapsulated into the auth plugin now.</p>
+
+<h4>There is additional information on the plugin</h4>
+
+<p>Whilst not shown in the example the auth_plugin has the following attributes:</p>
+
+<ul>
+<li>user.auth_token</li>
+<li>user.user_id</li>
+<li>user.user_domain_id</li>
+<li>user.project_id</li>
+<li>user.project_domain_id</li>
+<li>user.trust_id</li>
+<li>user.role_names</li>
+</ul>
+
+
+<p>If you are storing the auth plugin in a context using these accessors can be much easier that trying to figure out the variables that auth_token middleware also set.</p>
+
+<h4>You can&rsquo;t serialize the auth plugin.</h4>
+
+<p>In the case of Nova and others the auth_token middleware check is performed on the API service however most service communication is done in a backend service.
+We currently have no way of serializing the plugin to an oslo.context so it is reconstructed on the backend.
+This is something we are working on.</p>
+
+<h4>It&rsquo;s available now</h4>
+
+<p>Going back to look at the initial review it is 5 days shy of 1 year old (merged 2014-09-15).
+There have been improvements since then however the basic functionality has been out for a while and is available in the current minimum global requirements.
+Glanceclient on the other hand has only had session support since the 1.0 release (2015-08-31) so you will need a recent version to test the example.</p>
+
+<h2>Conclusion</h2>
+
+<p>We are doing all we can to prevent services ever having to deal with the details of authentication in OpenStack.
+If your project has still not adopted plugins please come find us in #openstack-keystone on freenode as it&rsquo;s currently making your life more difficult.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Setting Up S4u2proxy]]></title>
@@ -579,12 +709,12 @@ from oslo.config import cfg
 
 cfg.CONF(sys.argv[1:])
 
-auth.register_conf_options(cfg.CONF, 'somegroup')
-session.Session.register_conf_options(cfg.CONF, 'somegroup')
+auth.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
+session.Session.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
 
-plugin = auth.load_from_conf_options(cfg.CONF, 'somegroup')
+plugin = auth.load_from_conf_options(cfg.CONF, &#39;somegroup&#39;)
 sess = session.Session.load_from_conf_options(cfg.CONF,
-                                              'somegroup',
+                                              &#39;somegroup&#39;,
                                               auth=plugin)
 </code></pre></noscript></div>
 
@@ -683,7 +813,7 @@ import sys
 from keystoneclient import auth
 from keystoneclient import session
 
-parser = argparse.ArgumentParser('myapp')
+parser = argparse.ArgumentParser(&#39;myapp&#39;)
 
 auth.register_argparse_arguments(parser, sys.argv[1:])
 session.Session.register_cli_options(parser)
@@ -840,7 +970,7 @@ The following is a fairly simple script that lists all the plugins that are inst
 <div><script src='https://gist.github.com/7f5cfabd64a6922e643c.js?file=list-plugins.py'></script>
 <noscript><pre><code>import stevedore
 
-mgr = stevedore.ExtensionManager(namespace='keystoneclient.auth.plugin',
+mgr = stevedore.ExtensionManager(namespace=&#39;keystoneclient.auth.plugin&#39;,
                                  invoke_on_load=False)
 
 def print_plugin(ext):
@@ -2070,7 +2200,7 @@ for branch in `git branch | grep -v master`; do
     # for every commit on the branch check to ensure its in master
     for commit in `git log $branch | grep Change-Id | cut -d : -f 2`; do
         if [[ ! ${MERGED[&quot;$commit&quot;]} ]]; then
-            # if it's not in master then this branch wasn't merged so we
+            # if it&#39;s not in master then this branch wasn&#39;t merged so we
             # want to break out and not print its name.
             found=0
             break

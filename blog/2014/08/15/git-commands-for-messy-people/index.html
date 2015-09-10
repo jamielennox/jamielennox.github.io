@@ -185,7 +185,7 @@ for branch in `git branch | grep -v master`; do
     # for every commit on the branch check to ensure its in master
     for commit in `git log $branch | grep Change-Id | cut -d : -f 2`; do
         if [[ ! ${MERGED[&quot;$commit&quot;]} ]]; then
-            # if it's not in master then this branch wasn't merged so we
+            # if it&#39;s not in master then this branch wasn&#39;t merged so we
             # want to break out and not print its name.
             found=0
             break

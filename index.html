@@ -9,8 +9,7 @@
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="Motivation: Kerberos authentication provides a good experience for allowing users to connect to a service.
-However this authentication does not allow &hellip;">
+  <meta name="description" content="With auth plugins we are trying to ensure that an individual OpenStack service (like Nova or Glance) should never have to deal with the details of &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -117,6 +116,159 @@ However this authentication does not allow &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/09/10/user-auth-in-openstack-services/">User Auth in OpenStack Services</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-09-10T15:19:24+10:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>3:19 pm</span></time>
+        
+         | <a href="/blog/2015/09/10/user-auth-in-openstack-services/#disqus_thread">Comments</a>
+        
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>With auth plugins we are trying to ensure that an individual OpenStack service (like Nova or Glance) should never have to deal with the details of authentication.
+One of the improvements we&rsquo;ve made that has gone largely unnoticed is the addition of the <strong>keystone.token_auth</strong> authentication plugin that is passed down in a request&rsquo;s environment variables from auth_token middleware.
+This object is a full authentication plugin that uses the token and service catalog of the user that was just validated so that the service does the right thing without having to figure out keystone&rsquo;s token format.</p>
+
+<p>This means that service to service communication is as simple as:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">glanceclient</span> <span class="kn">import</span> <span class="n">client</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">json</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystoneclient</span> <span class="kn">import</span> <span class="n">session</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystonemiddleware</span> <span class="kn">import</span> <span class="n">auth_token</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">oslo_config</span> <span class="kn">import</span> <span class="n">cfg</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">webob.dec</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">wsgiref</span> <span class="kn">import</span> <span class="n">simple_server</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">cfg</span><span class="o">.</span><span class="n">CONF</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="s">&#39;testservice&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">register_conf_options</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">CONF</span><span class="p">,</span> <span class="s">&#39;communication&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">SESSION</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="o">.</span><span class="n">load_from_conf_options</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">CONF</span><span class="p">,</span> <span class="s">&#39;communication&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@webob.dec.wsgify</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">app</span><span class="p">(</span><span class="n">req</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">glance</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="s">&#39;2&#39;</span><span class="p">,</span>
+</span><span class='line'>                           <span class="n">session</span><span class="o">=</span><span class="n">SESSION</span><span class="p">,</span>
+</span><span class='line'>                           <span class="n">auth</span><span class="o">=</span><span class="n">req</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;keystone.token_auth&#39;</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">webob</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">glance</span><span class="o">.</span><span class="n">images</span><span class="o">.</span><span class="n">list</span><span class="p">()]))</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="n">app</span> <span class="o">=</span> <span class="n">auth_token</span><span class="o">.</span><span class="n">AuthProtocol</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="p">{})</span>
+</span><span class='line'><span class="n">server</span> <span class="o">=</span> <span class="n">simple_server</span><span class="o">.</span><span class="n">make_server</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="mi">8000</span><span class="p">,</span> <span class="n">app</span><span class="p">)</span>
+</span><span class='line'><span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is a full service that responds to every request with a JSON formatted list of image names in your project which is not all that useful but proves a point. There are some things to notice:</p>
+
+<h4>The session is global.</h4>
+
+<p>There are two ways to use a session with authentication.</p>
+
+<ul>
+<li>If you are writing something like a CLI application then you will want to use the same authentication for the lifetime of the program and it can be easier to just pass an auth plugin to the sesion constructor and forget about it.</li>
+<li>If you are writing a service that wants to use many different authentications over its lifetime you can pass the auth directly to the client that will consume it.</li>
+</ul>
+
+
+<p>In our case we want to re-use the session for benefits like connection pooling and caching, but we will often change the authentication being used so we pass the plugin to the client directly.
+The session is thread safe and is able to be reused across requests like this.
+Consider this to be splitting the application context and the request context.</p>
+
+<h4>We create the glanceclient just in time.</h4>
+
+<p>As a very small application this isn&rsquo;t obvious however because all the caching and authentication logic is being handled by the session and plugin there is no reason to keep a client around.
+Clients become very cheap to create and so in most situations you can use a client object within a function and then discard it.</p>
+
+<h4>We never entered a URL for Glance.</h4>
+
+<p>At no point did we have to provide a URL for glance in the config file.
+If on any project you encounter you have to enter a fixed URL to communicate with another service please file a bug.
+Keystone tokens have a service catalog in them so that all requests made on behalf of a user go to the appropriate URL.
+In the past this was a relatively ugly affair involving parsing the information from dictionaries, however this is all encapsulated into the auth plugin now.</p>
+
+<h4>There is additional information on the plugin</h4>
+
+<p>Whilst not shown in the example the auth_plugin has the following attributes:</p>
+
+<ul>
+<li>user.auth_token</li>
+<li>user.user_id</li>
+<li>user.user_domain_id</li>
+<li>user.project_id</li>
+<li>user.project_domain_id</li>
+<li>user.trust_id</li>
+<li>user.role_names</li>
+</ul>
+
+
+<p>If you are storing the auth plugin in a context using these accessors can be much easier that trying to figure out the variables that auth_token middleware also set.</p>
+
+<h4>You can&rsquo;t serialize the auth plugin.</h4>
+
+<p>In the case of Nova and others the auth_token middleware check is performed on the API service however most service communication is done in a backend service.
+We currently have no way of serializing the plugin to an oslo.context so it is reconstructed on the backend.
+This is something we are working on.</p>
+
+<h4>It&rsquo;s available now</h4>
+
+<p>Going back to look at the initial review it is 5 days shy of 1 year old (merged 2014-09-15).
+There have been improvements since then however the basic functionality has been out for a while and is available in the current minimum global requirements.
+Glanceclient on the other hand has only had session support since the 1.0 release (2015-08-31) so you will need a recent version to test the example.</p>
+
+<h2>Conclusion</h2>
+
+<p>We are doing all we can to prevent services ever having to deal with the details of authentication in OpenStack.
+If your project has still not adopted plugins please come find us in #openstack-keystone on freenode as it&rsquo;s currently making your life more difficult.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -749,12 +901,12 @@ from oslo.config import cfg
 
 cfg.CONF(sys.argv[1:])
 
-auth.register_conf_options(cfg.CONF, 'somegroup')
-session.Session.register_conf_options(cfg.CONF, 'somegroup')
+auth.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
+session.Session.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
 
-plugin = auth.load_from_conf_options(cfg.CONF, 'somegroup')
+plugin = auth.load_from_conf_options(cfg.CONF, &#39;somegroup&#39;)
 sess = session.Session.load_from_conf_options(cfg.CONF,
-                                              'somegroup',
+                                              &#39;somegroup&#39;,
                                               auth=plugin)
 </code></pre></noscript></div>
 
@@ -853,7 +1005,7 @@ import sys
 from keystoneclient import auth
 from keystoneclient import session
 
-parser = argparse.ArgumentParser('myapp')
+parser = argparse.ArgumentParser(&#39;myapp&#39;)
 
 auth.register_argparse_arguments(parser, sys.argv[1:])
 session.Session.register_cli_options(parser)
@@ -1010,7 +1162,7 @@ The following is a fairly simple script that lists all the plugins that are inst
 <div><script src='https://gist.github.com/7f5cfabd64a6922e643c.js?file=list-plugins.py'></script>
 <noscript><pre><code>import stevedore
 
-mgr = stevedore.ExtensionManager(namespace='keystoneclient.auth.plugin',
+mgr = stevedore.ExtensionManager(namespace=&#39;keystoneclient.auth.plugin&#39;,
                                  invoke_on_load=False)
 
 def print_plugin(ext):
@@ -1809,7 +1961,7 @@ for branch in `git branch | grep -v master`; do
     # for every commit on the branch check to ensure its in master
     for commit in `git log $branch | grep Change-Id | cut -d : -f 2`; do
         if [[ ! ${MERGED[&quot;$commit&quot;]} ]]; then
-            # if it's not in master then this branch wasn't merged so we
+            # if it&#39;s not in master then this branch wasn&#39;t merged so we
             # want to break out and not print its name.
             found=0
             break
@@ -1895,214 +2047,6 @@ However we removed httplib a number of releases ago and now simply reconstruct t
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class=''><span class='line'>WARNING keystoneclient.middleware.auth_token [-] Configuring admin URI using auth fragments. This is deprecated, use 'identity_uri' instead.</span></code></pre></td></tr></table></div></figure>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/02/24/client-session-objects/">Client Session Objects</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-02-24T13:32:00+11:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>1:32 pm</span></time>
-        
-         | <a href="/blog/2014/02/24/client-session-objects/#disqus_thread">Comments</a>
-        
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Keystoneclient has recently introduced a <em>Session</em> object.
-The concept was discussed and generally accepted at the Hong Kong Summit that keystoneclient as the root of authentication (and arguably security) should be responsible for transport (HTTP) and authentication across all the clients.</p>
-
-<p>The majority of the functionality in this post is written and up for review but has <strong>not yet been committed</strong>.
-I write this in an attempt to show the direction of clients as there is currently a lot of talk around projects such as the <a href="https://wiki.openstack.org/wiki/SDK-Development">OpenStack-SDK</a>.</p>
-
-<p>When working with clients you would first create an authentication object, then create a session object with that authentication and then re-use that session object across all the clients you instantiate.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">keystoneclient.auth.identity</span> <span class="kn">import</span> <span class="n">v2</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">keystoneclient</span> <span class="kn">import</span> <span class="n">session</span>
-</span><span class='line'><span class="kn">from</span> <span class="nn">keystoneclient.v2_0</span> <span class="kn">import</span> <span class="n">client</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">auth</span> <span class="o">=</span> <span class="n">v2</span><span class="o">.</span><span class="n">Password</span><span class="p">(</span><span class="n">auth_url</span><span class="o">=</span><span class="s">&#39;https://localhost:5000/v2.0&#39;</span><span class="p">,</span>
-</span><span class='line'>                   <span class="n">username</span><span class="o">=</span><span class="s">&#39;user&#39;</span><span class="p">,</span>
-</span><span class='line'>                   <span class="n">password</span><span class="o">=</span><span class="s">&#39;pass&#39;</span><span class="p">,</span>
-</span><span class='line'>                   <span class="n">tenant_name</span><span class="o">=</span><span class="s">&#39;demo&#39;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">sess</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">,</span>
-</span><span class='line'>                       <span class="n">verify</span><span class="o">=</span><span class="s">&#39;/path/to/ca.pem&#39;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">ksclient</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">sess</span><span class="p">,</span>
-</span><span class='line'>                         <span class="n">region_name</span><span class="o">=</span><span class="s">&#39;RegionOne&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="c"># other clients can be created sharing the sess parameter</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Now whenever you want to make an authenticated request you just indicated it as part of the request call.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># requests with authenticated are sent with a token</span>
-</span><span class='line'><span class="n">users</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;http://localhost:35357/v2.0/users&#39;</span><span class="p">,</span>
-</span><span class='line'>                 <span class="n">authenticated</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This was pretty much the extent of the initial proposal, however in working with the plugins I have come to realize that authentication is responsible for much more than simply getting a token.</p>
-
-<p>A large part of the data in a keystone token is the service catalog.
-This is a listing of the services known to an OpenStack deployment and the URLs that we should use when accessing those services.
-Because of the disjointed way in which clients have been developed this service catalog is parsed by each client to determine the URL with which to make API calls.</p>
-
-<p>With a session object in control of authentication and the service catalog there is no reason for a client to know its URL, just what it wants to communicate.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">users</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/users&#39;</span><span class="p">,</span>
-</span><span class='line'>                 <span class="n">authenticated</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-</span><span class='line'>                 <span class="n">service_type</span><span class="o">=</span><span class="s">&#39;identity&#39;</span><span class="p">,</span>
-</span><span class='line'>                 <span class="n">endpoint_type</span><span class="o">=</span><span class="s">&#39;admin&#39;</span><span class="p">,</span>
-</span><span class='line'>                 <span class="n">region_name</span><span class="o">=</span><span class="s">&#39;RegionOne&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The values of <code>service_type</code> and <code>endpoint_type</code> are well known and constant to a client, <code>region_name</code> is generally passed in when instantiating (if required).
-Requests made via the client object will have these parameters added automatically, so given the client from above the following call is exactly the same:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">users</span> <span class="o">=</span> <span class="n">ksclient</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/users&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Where I feel that this will really begin to help though is in dealing with the transition between API versions.</p>
-
-<p>Currently deployments of OpenStack put a versioned endpoint in the service catalog eg for identity <code>http://localhost:5000/v2.0</code>.
-This made sense initially however now as we try to transition people to the V3 identity API we find that there is no backwards compatible way to advertise both the v2 and v3 services.
-The agreed solution long-term is that entries in the service catalog should not be versioned eg. <code>http://localhost:5000</code> as the root path of a service will list the available versions.
-So how do we handle this transition across the 8+ clients?
-Easy:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">try</span><span class="p">:</span>
-</span><span class='line'>    <span class="n">users</span> <span class="o">=</span> <span class="n">sess</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/users&#39;</span><span class="p">,</span>
-</span><span class='line'>                     <span class="n">authenticated</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-</span><span class='line'>                     <span class="n">service_type</span><span class="o">=</span><span class="s">&#39;identity&#39;</span><span class="p">,</span>
-</span><span class='line'>                     <span class="n">endpoint_type</span><span class="o">=</span><span class="s">&#39;admin&#39;</span><span class="p">,</span>
-</span><span class='line'>                     <span class="n">region_name</span><span class="o">=</span><span class="s">&#39;RegionOne&#39;</span><span class="p">,</span>
-</span><span class='line'>                     <span class="n">version</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>  <span class="c"># just specify the version you need</span>
-</span><span class='line'><span class="k">except</span> <span class="n">keystoneclient</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">EndpointNotFound</span><span class="p">:</span>
-</span><span class='line'>    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;No v2 identity endpoint available&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This solution also means that when we have a suitable hack for the transition to unversioned endpoints it needs only be implemented in one place.</p>
-
-<p>Reliant on this is a means to discover the available versions of all the OpenStack services.
-Turns out that in general the projects are similar enough in structure that it can be done with a few minor hacks.
-For newer projects there is now a definitive specification <a href="https://wiki.openstack.org/wiki/VersionDiscovery">on the wiki</a>.</p>
-
-<p>A major advantage of this common approach is we now have a standard way of determining whether a version of a project is available in this cloud.
-Therefore we get client version discovery pretty much for free:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="n">sess</span><span class="o">.</span><span class="n">is_available</span><span class="p">(</span><span class="n">service_type</span><span class="o">=</span><span class="s">&#39;identity&#39;</span><span class="p">,</span>
-</span><span class='line'>                     <span class="n">version</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">)):</span>
-</span><span class='line'>    <span class="n">ksclient</span> <span class="o">=</span> <span class="n">v2_0</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">sess</span><span class="p">)</span>
-</span><span class='line'><span class="k">else</span><span class="p">:</span>
-</span><span class='line'>    <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Can&#39;t create a v2 identity client&quot;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>That&rsquo;s a little verbose as a client knows that information, so we can extract a wrapper:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="n">v2_0</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="o">.</span><span class="n">is_available</span><span class="p">(</span><span class="n">sess</span><span class="p">):</span>
-</span><span class='line'>    <span class="n">ksclient</span> <span class="o">=</span> <span class="n">v2_0</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">sess</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>or simply:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">ksclient</span> <span class="o">=</span> <span class="n">keystoneclient</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">session</span><span class="o">=</span><span class="n">sess</span><span class="p">,</span>
-</span><span class='line'>                                        <span class="n">version</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
-</span><span class='line'><span class="k">if</span> <span class="n">ksclient</span><span class="p">:</span>
-</span><span class='line'>    <span class="c"># do stuff</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>So the session object has evolved from a pure transport level object and this departure is somewhat concerning as I don&rsquo;t like mixing layers of responsibility.
-However in practice we have standardized on the <a href="http://www.python-requests.org">requests</a> library to abstract much of this away and the Session object is providing helpers around this.</p>
-
-<p>So, along with standardizing transport, by using the session object like this we can:</p>
-
-<ul>
-<li>reduce the basic client down to an object consisting of a few variables indicating the service type and version required.</li>
-<li>finally get a common service discovery mechanism for all the clients.</li>
-<li>shift the problem of API version migration onto someone else - probably me.</li>
-</ul>
-
-
-<h4>Disclaimers and Notes</h4>
-
-<ul>
-<li><p>The examples provided above use keystoneclient and the &lsquo;identity&rsquo; service purely because this is what has been implemented so far.
-In terms of CRUD operations keystoneclient is essentially the same as other client in that it retrieves its endpoint from the service catalog and issues requests to it, so the approach will work equally well.</p></li>
-<li><p>Currently none of the other clients rely upon the session object, I have been waiting on the inclusion of authentication plugins and service discovery before making this push.</p></li>
-<li><p>Region handling is still a little awkward when using the clients.
-I blame this completely on the fact that region handling is awkward on the servers.
-In Juno we should have hierarchical regions and then it may make sense to allow <code>region_name</code> to be set on a session rather than per client.</p></li>
-</ul>
 
 </div>
   

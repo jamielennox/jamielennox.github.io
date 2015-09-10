@@ -193,12 +193,12 @@ from oslo.config import cfg
 
 cfg.CONF(sys.argv[1:])
 
-auth.register_conf_options(cfg.CONF, 'somegroup')
-session.Session.register_conf_options(cfg.CONF, 'somegroup')
+auth.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
+session.Session.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
 
-plugin = auth.load_from_conf_options(cfg.CONF, 'somegroup')
+plugin = auth.load_from_conf_options(cfg.CONF, &#39;somegroup&#39;)
 sess = session.Session.load_from_conf_options(cfg.CONF,
-                                              'somegroup',
+                                              &#39;somegroup&#39;,
                                               auth=plugin)
 </code></pre></noscript></div>
 
@@ -297,7 +297,7 @@ import sys
 from keystoneclient import auth
 from keystoneclient import session
 
-parser = argparse.ArgumentParser('myapp')
+parser = argparse.ArgumentParser(&#39;myapp&#39;)
 
 auth.register_argparse_arguments(parser, sys.argv[1:])
 session.Session.register_cli_options(parser)
@@ -454,7 +454,7 @@ The following is a fairly simple script that lists all the plugins that are inst
 <div><script src='https://gist.github.com/7f5cfabd64a6922e643c.js?file=list-plugins.py'></script>
 <noscript><pre><code>import stevedore
 
-mgr = stevedore.ExtensionManager(namespace='keystoneclient.auth.plugin',
+mgr = stevedore.ExtensionManager(namespace=&#39;keystoneclient.auth.plugin&#39;,
                                  invoke_on_load=False)
 
 def print_plugin(ext):
