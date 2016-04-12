@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://www.jamielennox.net/blog/2016/04/12/os-http/</loc>
+    <lastmod>2016-04-12T12:57:25+10:00</lastmod>
+  </url>
+  <url>
     <loc>http://www.jamielennox.net/blog/2015/09/10/user-auth-in-openstack-services/</loc>
     <lastmod>2015-09-10T15:19:24+10:00</lastmod>
   </url>
@@ -69,11 +73,11 @@
     <lastmod>2012-11-11T17:13:00+11:00</lastmod>
   </url>
   <url>
-    <loc>http://www.jamielennox.net/blog/archives/</loc>
-    <lastmod>2015-09-10T17:39:32+10:00</lastmod>
+    <loc>http://www.jamielennox.net/</loc>
+    <lastmod>2016-04-12T13:03:24+10:00</lastmod>
   </url>
   <url>
-    <loc>http://www.jamielennox.net/</loc>
-    <lastmod>2015-09-10T17:39:32+10:00</lastmod>
+    <loc>http://www.jamielennox.net/blog/archives/</loc>
+    <lastmod>2016-04-12T13:03:24+10:00</lastmod>
   </url>
 </urlset>

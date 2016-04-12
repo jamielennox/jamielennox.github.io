@@ -9,8 +9,7 @@
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="Keystoneclient has recently introduced a Session object.
-The concept was discussed and generally accepted at the Hong Kong Summit that keystoneclient &hellip;">
+  <meta name="description" content="As part of the 0.8 release of keystoneclient (2014-04-17) we made an update to the way that you configure auth_token middleware in OpenStack. &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -117,6 +116,73 @@ The concept was discussed and generally accepted at the Hong Kong Summit that ke
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/05/21/identity-uri-in-auth-token-middleware/">Identity_uri in Auth Token Middleware</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-05-21T14:54:00+10:00'><span class='date'><span class='date-month'>May</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2014</span></span> <span class='time'>2:54 pm</span></time>
+        
+         | <a href="/blog/2014/05/21/identity-uri-in-auth-token-middleware/#disqus_thread">Comments</a>
+        
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>As part of the 0.8 release of keystoneclient (2014-04-17) we made an update to the way that you configure auth_token middleware in OpenStack.</p>
+
+<p>Previously you specify the path to the keystone server as a number of individual parameters such as:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>[keystone_authtoken]
+</span><span class='line'>auth_protocol = http
+</span><span class='line'>auth_port = 35357
+</span><span class='line'>auth_host = 127.0.0.1
+</span><span class='line'>auth_admin_prefix =</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This made sense in code when using httplib for communication where you use each of those independent pieces.
+However we removed httplib a number of releases ago and now simply reconstruct the full URL in code in the form:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>%(auth_protocol)s://%(auth_host)s:%(auth_port)d/%(auth_admin_prefix)s</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This format is much more intuitive for configuration and so should now be used with the key <strong>identity_uri</strong>. e.g.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>[keystone_authtoken]
+</span><span class='line'>identity_uri = http://127.0.0.1:35357</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Using the original format will continue to work but you&rsquo;ll see a deprecation message like:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>WARNING keystoneclient.middleware.auth_token [-] Configuring admin URI using auth fragments. This is deprecated, use 'identity_uri' instead.</span></code></pre></td></tr></table></div></figure>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -940,7 +1006,7 @@ The message itself is not encrypted and can be retrieved, but you cannot assert 
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2015 - Jamie Lennox -
+  Copyright &copy; 2016 - Jamie Lennox -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a> | Themed with <a href="https://github.com/lucaslew/whitespace">Whitespace</a></span>
 </p>
 

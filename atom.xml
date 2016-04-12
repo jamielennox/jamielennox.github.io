@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2015-09-10T17:39:32+10:00</updated>
+  <updated>2016-04-12T13:03:24+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,277 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Os-http]]></title>
+    <link href="http://www.jamielennox.net/blog/2016/04/12/os-http/"/>
+    <updated>2016-04-12T12:57:25+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2016/04/12/os-http</id>
+    <content type="html"><![CDATA[<h2>Background</h2>
+
+<p>Frequently doing OpenStack development I find myself wanting to query an API directly and observe the response.
+This is a fairly common development task, but it&rsquo;s more complicated in OpenStack because there is an order in which you are supposed to make calls.
+The ideal flow is:</p>
+
+<ul>
+<li>authenticate using credentials (username/password or a range of other mechanisms)</li>
+<li>use the service catalog returned with authentication to find the endpoint for a service</li>
+<li>find the API version URL you want from the service&rsquo;s endpoint</li>
+<li>make a request to the versioned URL</li>
+</ul>
+
+
+<p>So we generally end up simply using a combination of curl and <a href="https://stedolan.github.io/jq/">jq</a> against a known endpoint with an existing token.
+This pattern has existed for so long that the <code>--debug</code> output of most clients is actually in curl command form.
+There are numerous drawbacks to this approach including:</p>
+
+<ul>
+<li>you have to manually refresh tokens when they expire.</li>
+<li>you have to know the endpoints ahead of time.</li>
+<li>for security reasons the actual token is no longer displayed so you can&rsquo;t simply copy the outputted curl command.</li>
+<li>you have to remember all the curl/other tool commands for showing headers, readable output etc - YMMV on this but I always forget.</li>
+</ul>
+
+
+<h2>Introducing os-http</h2>
+
+<p>os-http is an easy to use CLI tool for making requests against OpenStack endpoints correctly.
+It&rsquo;s designed to allow developers to debug and inspect the responses of OpenStack REST APIs without having to manage the details of authentication, service catalog and version negotiation.
+Its interface is 100% modelled on the excellent <a href="https://github.com/jkbrzt/httpie">httpie</a>.</p>
+
+<p>I have recently added the 0.1 release to <a href="https://pypi.python.org/pypi/os-http/">pypi</a> and the source is available <a href="https://github.com/jamielennox/os-http">on my github</a> though it will probably migrate to the OpenStack infrastructure if it gains adoption.
+It is released under the Apache 2 License.</p>
+
+<p>It is still very raw and but I have been using it for some time and feel it may be useful for others.
+It is also in fairly desperate need of documentation - contributions welcome.</p>
+
+<h2>Example</h2>
+
+<p>Because it&rsquo;s powered by <a href="https://pypi.python.org/pypi/os-client-config">os-client-config</a> the authentication configuration is what you would expect from using <a href="https://pypi.python.org/pypi/python-openstackclient">openstackclient</a>.
+Documentation for preparing this authentication is available from both of these projects.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">export OS_CLOUD=devstack</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>There are then a number of choices you can make for service discovery:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">--os-service-type &lt;name&gt;    Service type to request from the catalog</span>
+</span><span class='line'><span class="go">--os-service-name &lt;name&gt;    Service name to request from the catalog</span>
+</span><span class='line'><span class="go">--os-interface &lt;name&gt;       API Interface to use [public, internal, admin]</span>
+</span><span class='line'><span class="go">--os-region-name &lt;name&gt;     Region of the cloud to use</span>
+</span><span class='line'><span class="go">--os-endpoint-override &lt;url&gt;  Endpoint to use instead of the endpoint in the catalog</span>
+</span><span class='line'><span class="go">--os-api-version &lt;version&gt;  Which version of the service API to use</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As is standard for OpenStack clients these options are also able to be set via the corresponding OS_ environment varibles:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">export OS_SERVICE_TYPE=image</span>
+</span><span class='line'><span class="go">export OS_API_VERSION=2</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The syntax for commands is then <code>os-http METHOD PATH [ITEM [ITEM]]</code>.
+ <code>ITEM</code> currently only accepts headers in a <code>key:value</code> format but will support others in future.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="gp">jamie@devstack:~$</span> os-http get /images X-My-Header:Value
+</span><span class='line'><span class="go">HTTP/1.1 200 OK</span>
+</span><span class='line'><span class="go">Date: Tue, 12 Apr 2016 01:35:31 GMT</span>
+</span><span class='line'><span class="go">Connection: keep-alive</span>
+</span><span class='line'><span class="go">Content-Type: application/json; charset=UTF-8</span>
+</span><span class='line'><span class="go">Content-Length: 1987</span>
+</span><span class='line'><span class="go">X-Openstack-Request-Id: req-3f6e07e7-cd0d-4a90-9d8a-0024a4bc347f</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="go">{</span>
+</span><span class='line'><span class="go">    &quot;first&quot;: &quot;/v2/images&quot;,</span>
+</span><span class='line'><span class="go">    &quot;images&quot;: [</span>
+</span><span class='line'><span class="go">        {</span>
+</span><span class='line'><span class="go">            &quot;checksum&quot;: &quot;eb9139e4942121f22bbc2afc0400b2a4&quot;,</span>
+</span><span class='line'><span class="go">            &quot;container_format&quot;: &quot;ami&quot;,</span>
+</span><span class='line'><span class="go">            &quot;created_at&quot;: &quot;2016-03-08T01:56:59Z&quot;,</span>
+</span><span class='line'><span class="go">            &quot;disk_format&quot;: &quot;ami&quot;,</span>
+</span><span class='line'><span class="go">            &quot;file&quot;: &quot;/v2/images/6c13a0e6-98a3-47fb-bee4-2e356668f7d9/file&quot;,</span>
+</span><span class='line'><span class="go">            &quot;id&quot;: &quot;6c13a0e6-98a3-47fb-bee4-2e356668f7d9&quot;,</span>
+</span><span class='line'><span class="go">            &quot;kernel_id&quot;: &quot;578a708b-d0de-4a28-bcd2-8627ad15a971&quot;,</span>
+</span><span class='line'><span class="go">            &quot;min_disk&quot;: 0,</span>
+</span><span class='line'><span class="go">            &quot;min_ram&quot;: 0,</span>
+</span><span class='line'><span class="go">            &quot;name&quot;: &quot;cirros-0.3.4-x86_64-uec&quot;,</span>
+</span><span class='line'><span class="go">            &quot;owner&quot;: &quot;1f04217930f34b4a92fb11457783f2c0&quot;,</span>
+</span><span class='line'><span class="go">            &quot;protected&quot;: false,</span>
+</span><span class='line'><span class="go">            &quot;ramdisk_id&quot;: &quot;0eaea69b-ebfd-40f3-bf86-13b8ad08462b&quot;,</span>
+</span><span class='line'><span class="go">            &quot;schema&quot;: &quot;/v2/schemas/image&quot;,</span>
+</span><span class='line'><span class="go">            &quot;self&quot;: &quot;/v2/images/6c13a0e6-98a3-47fb-bee4-2e356668f7d9&quot;,</span>
+</span><span class='line'><span class="go">            &quot;size&quot;: 25165824,</span>
+</span><span class='line'><span class="go">            &quot;status&quot;: &quot;active&quot;,</span>
+</span><span class='line'><span class="go">            &quot;tags&quot;: [],</span>
+</span><span class='line'><span class="go">            &quot;updated_at&quot;: &quot;2016-03-08T01:56:59Z&quot;,</span>
+</span><span class='line'><span class="go">            &quot;virtual_size&quot;: null,</span>
+</span><span class='line'><span class="go">            &quot;visibility&quot;: &quot;public&quot;</span>
+</span><span class='line'><span class="go">        },</span>
+</span><span class='line'><span class="go">        {</span>
+</span><span class='line'><span class="go">            &quot;checksum&quot;: &quot;be575a2b939972276ef675752936977f&quot;,</span>
+</span><span class='line'><span class="go">            &quot;container_format&quot;: &quot;ari&quot;,</span>
+</span><span class='line'><span class="go">            &quot;created_at&quot;: &quot;2016-03-08T01:56:57Z&quot;,</span>
+</span><span class='line'><span class="go">            &quot;disk_format&quot;: &quot;ari&quot;,</span>
+</span><span class='line'><span class="go">            &quot;file&quot;: &quot;/v2/images/0eaea69b-ebfd-40f3-bf86-13b8ad08462b/file&quot;,</span>
+</span><span class='line'><span class="go">            &quot;id&quot;: &quot;0eaea69b-ebfd-40f3-bf86-13b8ad08462b&quot;,</span>
+</span><span class='line'><span class="go">            &quot;min_disk&quot;: 0,</span>
+</span><span class='line'><span class="go">            &quot;min_ram&quot;: 0,</span>
+</span><span class='line'><span class="go">            &quot;name&quot;: &quot;cirros-0.3.4-x86_64-uec-ramdisk&quot;,</span>
+</span><span class='line'><span class="go">            &quot;owner&quot;: &quot;1f04217930f34b4a92fb11457783f2c0&quot;,</span>
+</span><span class='line'><span class="go">            &quot;protected&quot;: false,</span>
+</span><span class='line'><span class="go">            &quot;schema&quot;: &quot;/v2/schemas/image&quot;,</span>
+</span><span class='line'><span class="go">            &quot;self&quot;: &quot;/v2/images/0eaea69b-ebfd-40f3-bf86-13b8ad08462b&quot;,</span>
+</span><span class='line'><span class="go">            &quot;size&quot;: 3740163,</span>
+</span><span class='line'><span class="go">            &quot;status&quot;: &quot;active&quot;,</span>
+</span><span class='line'><span class="go">            &quot;tags&quot;: [],</span>
+</span><span class='line'><span class="go">            &quot;updated_at&quot;: &quot;2016-03-08T01:56:57Z&quot;,</span>
+</span><span class='line'><span class="go">            &quot;virtual_size&quot;: null,</span>
+</span><span class='line'><span class="go">            &quot;visibility&quot;: &quot;public&quot;</span>
+</span><span class='line'><span class="go">        },</span>
+</span><span class='line'><span class="go">        {</span>
+</span><span class='line'><span class="go">            &quot;checksum&quot;: &quot;8a40c862b5735975d82605c1dd395796&quot;,</span>
+</span><span class='line'><span class="go">            &quot;container_format&quot;: &quot;aki&quot;,</span>
+</span><span class='line'><span class="go">            &quot;created_at&quot;: &quot;2016-03-08T01:56:54Z&quot;,</span>
+</span><span class='line'><span class="go">            &quot;disk_format&quot;: &quot;aki&quot;,</span>
+</span><span class='line'><span class="go">            &quot;file&quot;: &quot;/v2/images/578a708b-d0de-4a28-bcd2-8627ad15a971/file&quot;,</span>
+</span><span class='line'><span class="go">            &quot;id&quot;: &quot;578a708b-d0de-4a28-bcd2-8627ad15a971&quot;,</span>
+</span><span class='line'><span class="go">            &quot;min_disk&quot;: 0,</span>
+</span><span class='line'><span class="go">            &quot;min_ram&quot;: 0,</span>
+</span><span class='line'><span class="go">            &quot;name&quot;: &quot;cirros-0.3.4-x86_64-uec-kernel&quot;,</span>
+</span><span class='line'><span class="go">            &quot;owner&quot;: &quot;1f04217930f34b4a92fb11457783f2c0&quot;,</span>
+</span><span class='line'><span class="go">            &quot;protected&quot;: false,</span>
+</span><span class='line'><span class="go">            &quot;schema&quot;: &quot;/v2/schemas/image&quot;,</span>
+</span><span class='line'><span class="go">            &quot;self&quot;: &quot;/v2/images/578a708b-d0de-4a28-bcd2-8627ad15a971&quot;,</span>
+</span><span class='line'><span class="go">            &quot;size&quot;: 4979632,</span>
+</span><span class='line'><span class="go">            &quot;status&quot;: &quot;active&quot;,</span>
+</span><span class='line'><span class="go">            &quot;tags&quot;: [],</span>
+</span><span class='line'><span class="go">            &quot;updated_at&quot;: &quot;2016-03-08T01:56:55Z&quot;,</span>
+</span><span class='line'><span class="go">            &quot;virtual_size&quot;: null,</span>
+</span><span class='line'><span class="go">            &quot;visibility&quot;: &quot;public&quot;</span>
+</span><span class='line'><span class="go">        }</span>
+</span><span class='line'><span class="go">    ],</span>
+</span><span class='line'><span class="go">    &quot;schema&quot;: &quot;/v2/schemas/images&quot;</span>
+</span><span class='line'><span class="go">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> <code>X-My-Header:Value</code> is purely for demonstration purposes and is ignored by glance.
+As you can see the output is nicely formatted and in a console even includes some pygments magic for coloring.</p>
+
+<h2>Caveats</h2>
+
+<p>os-http is at version 0.1 and has many unimplemented or not quite right things.
+Most notably:</p>
+
+<ul>
+<li><p>There is really only support for GET and other body-less requests.
+Whilst you can specify PUT/POST or other to method there is currently no means to specify body data so the request will be empty.
+This would be easy to add but I havent used it so I haven&rsquo;t implemented it - contributions welcome.</p></li>
+<li><p>The output is intended to be easy for a developer to consume, not for a script to parse (though this may be considered in future).
+It is not intended to be a replacement for the existing CLIs in scripts.
+The default output may change to include any additional information that could be useful to developers.</p></li>
+<li><p>Because os-http does requests &lsquo;correctly&rsquo; you may find that using &ndash;os-api-version gives errors - particularly with nova.
+This is because for most installations the service catalog for nova points to a protected endpoint.
+There is ongoing work upstream to fix the service catalog in general but for now os-http doesn&rsquo;t contain the hacks that clients do to work around poor setups.
+Using this tool may lead you to discover just how many hacks there are.</p></li>
+</ul>
+
+
+<p>Please test it out and report any feedback or bugs.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[User Auth in OpenStack Services]]></title>
