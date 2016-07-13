@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2016-04-12T13:03:24+10:00</updated>
+  <updated>2016-07-13T17:03:07+10:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,118 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[The Positional Library]]></title>
+    <link href="http://www.jamielennox.net/blog/2016/07/13/the-positional-library/"/>
+    <updated>2016-07-13T15:27:52+10:00</updated>
+    <id>http://www.jamielennox.net/blog/2016/07/13/the-positional-library</id>
+    <content type="html"><![CDATA[<p>So one of my favourite things in python 3 syntax is:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">function</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">kw1</span><span class="p">,</span> <span class="n">kw2</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This <code>*</code> syntax says that <code>kw1</code> and <code>kw2</code> must be presented as keyword
+arguments. Being that <code>kw1</code> is after the <code>*</code> and does not have a default value
+it becomes a required keyword argument.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">function</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="n">kw1</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This may seem kind of pedantic but the traditional python syntax does not
+distinguish between optional arguments and positional arguments with defaults.
+This means if your function has a large number of keyword arguments you cannot
+assume your users don&rsquo;t pass all those arguments positionally (I&rsquo;ve seen it).
+This makes it difficult to refactor these functions because you cannot
+reorganize or bundle those arguments up into <code>**kwargs</code> later.</p>
+
+<p>In <a href="https://git.openstack.org/cgit/openstack/keystoneauth">keystoneauth</a> we
+have a number of functions like this that have a lot of optional arguments but
+for future proofing we want to ensure people only pass them via keyword. So we
+created the <a href="https://pypi.python.org/pypi/positional">positional</a> library.</p>
+
+<p>The <a href="https://github.com/morganfainberg/positional">README</a> has a number of
+detailed examples of use, but in general it provides a python 2 and 3
+compatible way to ensure your users pass parameters via keyword.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">positional</span> <span class="kn">import</span> <span class="n">positional</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@positional</span><span class="p">()</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">function</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">kw1</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">kw2</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+</span><span class='line'>    <span class="c"># do stuff</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># must pass kw1 and kw2 as keyword arguments</span>
+</span><span class='line'><span class="n">function</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="n">kw1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">kw2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>By default specifying only the positional decorator every argument with a
+default value that is passed to the function must be passed via keyword.
+Specifying a number in the decorator lets you control the number of arguments
+that can be passed positionally to the function:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="nd">@positional</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">function</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">kw1</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">kw2</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+</span><span class='line'>    <span class="c"># do stuff</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># kw1 has a default but can also be passed positionally</span>
+</span><span class='line'><span class="n">function</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">kw2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Later replacing this function with:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="nd">@positional</span><span class="p">()</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">worker</span><span class="p">(</span><span class="n">kw2</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">kw3</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+</span><span class='line'>    <span class="c"># do stuff</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@positional</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">function</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">kw1</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">worker</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">function</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">kw2</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>is completely backwards compatible because there is no way a user could have
+provided <code>kw2</code> as a positional argument.</p>
+
+<p>I look forward to the day when we are all in a python 3 only world and
+<code>@positional</code> is no longer required. Until then it has already allowed us to do
+a number of library refactors that would have otherwise been much more
+difficult.</p>
+
+<p>Thanks to <a href="https://twitter.com/MdrnStm">Morgan Fainberg</a> for the help and
+upkeep on positional.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Os-http]]></title>

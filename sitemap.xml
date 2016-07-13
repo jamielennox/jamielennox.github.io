@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://www.jamielennox.net/blog/2016/07/13/the-positional-library/</loc>
+    <lastmod>2016-07-13T15:27:52+10:00</lastmod>
+  </url>
+  <url>
     <loc>http://www.jamielennox.net/blog/2016/04/12/os-http/</loc>
     <lastmod>2016-04-12T12:57:25+10:00</lastmod>
   </url>
@@ -74,10 +78,10 @@
   </url>
   <url>
     <loc>http://www.jamielennox.net/</loc>
-    <lastmod>2016-04-12T13:03:24+10:00</lastmod>
+    <lastmod>2016-07-13T17:03:07+10:00</lastmod>
   </url>
   <url>
     <loc>http://www.jamielennox.net/blog/archives/</loc>
-    <lastmod>2016-04-12T13:03:24+10:00</lastmod>
+    <lastmod>2016-07-13T17:03:07+10:00</lastmod>
   </url>
 </urlset>
