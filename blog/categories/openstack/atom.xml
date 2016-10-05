@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Openstack | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/openstack/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2016-07-13T17:03:07+10:00</updated>
+  <updated>2016-10-05T16:44:31+11:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,105 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Testing With Auth_token Middleware]]></title>
+    <link href="http://www.jamielennox.net/blog/2016/10/05/testing-with-auth-token-middleware/"/>
+    <updated>2016-10-05T17:28:21+11:00</updated>
+    <id>http://www.jamielennox.net/blog/2016/10/05/testing-with-auth-token-middleware</id>
+    <content type="html"><![CDATA[<p>For most OpenStack services the auth_token middleware component is the only direct interaction the service will have with keystone.
+It is the piece of the service that validates the token a user presents and relays the stored information.</p>
+
+<p>When testing a service we want to ensure that the middleware is working and presenting the correct information but not actually talking to keystone.
+To do this keystonemiddleware provides a fixture that will stub out the interaction with keystone with an existing token.</p>
+
+<p>If all that makes sense to you then at this point I think you mostly just want a code example and you can research anything else you need.</p>
+
+<pre><code class="python">import json
+
+from keystoneauth1 import fixture as ksa_fixture
+from keystonemiddleware import auth_token
+from keystonemiddleware import fixture as ksm_fixture
+from oslo_context import context
+import testtools
+import webob.dec
+import webtest
+
+
+@webob.dec.wsgify
+def app(request):
+    """A really simple WSGI application that returns some context info."""
+
+    # don't try to figure out what AuthToken sets, just use a context
+    ctxt = context.RequestContext.from_environ(request.environ, overwrite=False)
+
+    # return some information from context so we can verify the test
+    resp_body = {'project_id': ctxt.tenant,
+                 'user_id': ctxt.user,
+                 'auth_token': ctxt.auth_token}
+
+    return webob.Response(json.dumps(resp_body),
+                          status_code=200,
+                          content_type='application/json')
+
+
+class Tests(testtools.TestCase):
+
+    @staticmethod
+    def load_app():
+        # load your wsgi app here, wrapped in auth_token middleware
+        return auth_token.AuthProtocol(app, {})
+
+    @staticmethod
+    def create_token():
+        """Create a fake token that will be used in testing"""
+
+        # Creates a project scoped V3 token, with 1 entry in the catalog
+        token = ksa_fixture.V3Token()
+        token.set_project_scope()
+
+        s = token.add_service('identity')
+        s.add_standard_endpoints(public='http://example.com/identity/public',
+                                 admin='http://example.com/identity/admin',
+                                 internal='http://example.com/identity/internal',
+                                 region='RegionOne')
+
+        return token
+
+    def setUp(self):
+        super(Tests, self).setUp()
+
+        # create our app. webtest gives us a callable interface to it
+        self.app = webtest.TestApp(self.load_app())
+
+        # stub out auth_token middleware
+        self.auth_token_fixture = self.useFixture(ksm_fixture.AuthTokenFixture())
+
+        # create a token, mock it and save it and the ID for later use
+        self.token = self.create_token()
+        self.token_id = self.auth_token_fixture.add_token(self.token)
+
+    def test_auth_token_params(self):
+        # make a request with the stubbed out token_id and unpack the response
+        body = self.app.get('/', headers={'X-Auth-Token': self.token_id}).json
+
+        # ensure that the information in our stubbed token made it to the app
+        self.assertEqual(self.token_id, body['auth_token'])
+        self.assertEqual(self.token.project_id, body['project_id'])
+        self.assertEqual(self.token.user_id, body['user_id'])
+</code></pre>
+
+<p>The important pieces are:</p>
+
+<ul>
+<li><a href="http://docs.pylonsproject.org/projects/webtest/en/latest/">Webtest</a> is a useful testing library emulating a wsgi layer so you can make requests.</li>
+<li><a href="http://docs.openstack.org/developer/keystoneauth/api/keystoneauth1.fixture.html#keystoneauth1.fixture.v3.Token">ksa_fixture.V3Token</a> is a helper that builds the correct raw data layout for a V3 token.</li>
+<li><a href="http://docs.openstack.org/developer/keystonemiddleware/api/keystonemiddleware.html#keystonemiddleware.fixture.AuthTokenFixture">AuthTokenFixture</a> is doing the mocking and returning the token data.</li>
+<li><a href="http://docs.openstack.org/developer/oslo.context/api/context.html#oslo_context.context.RequestContext.from_environ">RequestContext.from_environ</a> takes the information auth_token sets into headers and loads it into the standard place in a RequestContext.</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[The Positional Library]]></title>
@@ -418,262 +517,6 @@ This is a known issue we need to address and will likely result in changing the 
 <p>For further proof that this works as expected checkout <a href="https://github.com/openstack-dev/devstack/blob/5ce44cd63b6e2b53f08a6b4b87cb4ab11d1ade26/lib/keystone#L448">devstack</a> which has been operating this way for a couple of weeks.</p>
 
 <p><em>NOTE:</em> Support for authentication plugins was released in keystonemiddleware 1.3.0 released 2014-12-18.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Loading Authentication Plugins]]></title>
-    <link href="http://www.jamielennox.net/blog/2015/02/17/loading-authentication-plugins/"/>
-    <updated>2015-02-17T09:08:03+11:00</updated>
-    <id>http://www.jamielennox.net/blog/2015/02/17/loading-authentication-plugins</id>
-    <content type="html"><![CDATA[<p>I&rsquo;ve been pushing a lot on the authentication plugins aspect of keystoneclient recently.
-They allow us to generalize the process of getting a token from OpenStack such that we can enable new mechanisms like <a href="https://github.com/openstack/python-keystoneclient-kerberos">Kerberos</a> or client certificate authentication - without having to modify all the clients.</p>
-
-<p>For most people hardcoding credentials into scripts is not an option, both for security and for reusability reasons.
-By having a standard loading mechanism for this selection of new plugins we can ensure that applications we write can be used with future plugins.
-I am currently working on getting this method into the existing services to allow for more extensible service authentication, so this pattern should become more common in future.</p>
-
-<p>There are two loading mechanisms for authentication plugins provided by keystoneclient:</p>
-
-<ul>
-<li>Loading from an <a href="http://docs.openstack.org/developer/oslo.config">oslo.config</a> CONF object.</li>
-<li>Loading from an <a href="https://docs.python.org/2/library/argparse.html">argparse</a> command line</li>
-</ul>
-
-
-<h2>Loading from CONF</h2>
-
-<p>We can define a plugin from CONF like:</p>
-
-<pre><code class="ini">[somegroup]
-auth_plugin = v3password
-auth_url = http://keystone.test:5000/v3
-username = user
-password = pass
-user_domain_name = domain
-project_name = proj
-project_domain_name = domain
-</code></pre>
-
-<p>The initially required field here is <code>auth_plugin</code> which specifies the name of the plugin to load.
-All other parameters in that section are dependant on the information that plugin (in this case v3password) requires.</p>
-
-<p>To load that plugin from an application we do:</p>
-
-<p><div><script src='https://gist.github.com/3b26bfb8e80fa48133e9.js?file=test-conf.py'></script>
-<noscript><pre><code>import sys
-
-from keystoneclient import auth
-from keystoneclient import session
-from oslo.config import cfg
-
-cfg.CONF(sys.argv[1:])
-
-auth.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
-session.Session.register_conf_options(cfg.CONF, &#39;somegroup&#39;)
-
-plugin = auth.load_from_conf_options(cfg.CONF, &#39;somegroup&#39;)
-sess = session.Session.load_from_conf_options(cfg.CONF,
-                                              &#39;somegroup&#39;,
-                                              auth=plugin)
-</code></pre></noscript></div>
-</p>
-
-<p>Then create <code>novaclient</code>, <code>cinderclient</code> or whichever client you wish to talk to with that session as normal.</p>
-
-<p>You can also use an <code>auth_section</code> parameter to specify a different group in which the authentication credentials are stored.
-This allows you to reuse the same credentials in multiple places throughout your configuration file without copying and pasting.</p>
-
-<pre><code class="ini">[somegroup]
-auth_section = credentials
-
-[othergroup]
-auth_section = credentials
-
-[credentials]
-auth_plugin = v3password
-auth_url = http://keystone.test:5000/v3
-username = user
-password = pass
-user_domain_name = domain
-project_name = proj
-project_domain_name = domain
-</code></pre>
-
-<p>The above loading code for <code>[somegroup]</code> or <code>[othergroup]</code> will load separate instances of the same authentication plugin.</p>
-
-<h2>Loading from the command line</h2>
-
-<p>The options present on the command line are very similar to that presented via the config file, and follow a pattern familiar to the existing openstack CLI applications.
-The equivalent options as specified in the config above would be presented as:</p>
-
-<pre><code class="sh">./myapp --os-auth-plugin v3password \
-        --os-auth-url http://keystone.test:5000/v3 \
-        --os-username user \
-        --os-password pass \
-        --os-user-domain-name domain \
-        --os-project-name proj \
-        --os-project-domain-name domain
-        command
-</code></pre>
-
-<p>Or</p>
-
-<pre><code class="sh">export OS_AUTH_PLUGIN=v3password
-export OS_AUTH_URL=http://keystone.test:5000/v3
-export OS_USERNAME=user
-export OS_PASSWORD=pass
-export OS_USER_DOMAIN_NAME=domain
-export OS_PROJECT_NAME=proj
-export OS_PROJECT_DOMAIN_NAME=domain
-
-./myapp command
-</code></pre>
-
-<p>This is loaded from python via:</p>
-
-<p><div><script src='https://gist.github.com/4e22049c5bc57f4b68ec.js?file=test-cli.py'></script>
-<noscript><pre><code>import argparse
-import sys
-
-from keystoneclient import auth
-from keystoneclient import session
-
-parser = argparse.ArgumentParser(&#39;myapp&#39;)
-
-auth.register_argparse_arguments(parser, sys.argv[1:])
-session.Session.register_cli_options(parser)
-
-args = parser.parse_args()
-
-plugin = auth.load_from_argparse_arguments(args)
-sess = session.Session.load_from_cli_options(args, auth=plugin)
-</code></pre></noscript></div>
-</p>
-
-<p><strong>NOTE</strong>: I am aware that the syntax is wonky with the command for session loading and auth plugin loading different.
-This was one of those things that was &lsquo;optimized&rsquo; between reviews and managed to slip through.
-There is a review out to standardize this.</p>
-
-<p>This will also set <code>--help</code> appropriately, so if you are unsure of the arguments that this particular authentication plugin takes you can do:</p>
-
-<pre><code class="sh">./myapp --os-auth-plugin v3password --help
-
-usage: myapp [-h] [--os-auth-plugin &lt;name&gt;] [--os-auth-url OS_AUTH_URL]
-             [--os-domain-id OS_DOMAIN_ID] [--os-domain-name OS_DOMAIN_NAME]
-             [--os-project-id OS_PROJECT_ID]
-             [--os-project-name OS_PROJECT_NAME]
-             [--os-project-domain-id OS_PROJECT_DOMAIN_ID]
-             [--os-project-domain-name OS_PROJECT_DOMAIN_NAME]
-             [--os-trust-id OS_TRUST_ID] [--os-user-id OS_USER_ID]
-             [--os-user-name OS_USERNAME]
-             [--os-user-domain-id OS_USER_DOMAIN_ID]
-             [--os-user-domain-name OS_USER_DOMAIN_NAME]
-             [--os-password OS_PASSWORD] [--insecure]
-             [--os-cacert &lt;ca-certificate&gt;] [--os-cert &lt;certificate&gt;]
-             [--os-key &lt;key&gt;] [--timeout &lt;seconds&gt;]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --os-auth-plugin &lt;name&gt;
-                        The auth plugin to load
-  --insecure            Explicitly allow client to perform "insecure" TLS
-                        (https) requests. The server's certificate will not be
-                        verified against any certificate authorities. This
-                        option should be used with caution.
-  --os-cacert &lt;ca-certificate&gt;
-                        Specify a CA bundle file to use in verifying a TLS
-                        (https) server certificate. Defaults to
-                        env[OS_CACERT].
-  --os-cert &lt;certificate&gt;
-                        Defaults to env[OS_CERT].
-  --os-key &lt;key&gt;        Defaults to env[OS_KEY].
-  --timeout &lt;seconds&gt;   Set request timeout (in seconds).
-
-Authentication Options:
-  Options specific to the v3password plugin.
-
-  --os-auth-url OS_AUTH_URL
-                        Authentication URL
-  --os-domain-id OS_DOMAIN_ID
-                        Domain ID to scope to
-  --os-domain-name OS_DOMAIN_NAME
-                        Domain name to scope to
-  --os-project-id OS_PROJECT_ID
-                        Project ID to scope to
-  --os-project-name OS_PROJECT_NAME
-                        Project name to scope to
-  --os-project-domain-id OS_PROJECT_DOMAIN_ID
-                        Domain ID containing project
-  --os-project-domain-name OS_PROJECT_DOMAIN_NAME
-                        Domain name containing project
-  --os-trust-id OS_TRUST_ID
-                        Trust ID
-  --os-user-id OS_USER_ID
-                        User ID
-  --os-user-name OS_USERNAME, --os-username OS_USERNAME
-                        Username
-  --os-user-domain-id OS_USER_DOMAIN_ID
-                        User's domain id
-  --os-user-domain-name OS_USER_DOMAIN_NAME
-                        User's domain name
-  --os-password OS_PASSWORD
-                        User's password
-</code></pre>
-
-<p>To prevent polluting your CLI&rsquo;s help only the &lsquo;Authentication Options&rsquo; for the plugin you specified by &lsquo;&ndash;os-auth-plugin&rsquo; are added to the help.</p>
-
-<p>Having explained all this one of the primary application currently embracing authentication plugins, <a href="https://github.com/openstack/python-openstackclient">openstackclient</a>, currently handles its options slightly differently and you will need to use <code>--os-auth-type</code> instead of <code>--os-auth-plugin</code></p>
-
-<h2>Available plugins</h2>
-
-<p>The <a href="http://docs.openstack.org/developer/python-keystoneclient/authentication-plugins.html">documentation</a> for plugins provides basic features and parameters however it&rsquo;s not always going to be up to date with all options, especially for plugins not handled within keystoneclient.
-The following is a fairly simple script that lists all the plugins that are installed on the system and their options.</p>
-
-<p><div><script src='https://gist.github.com/7f5cfabd64a6922e643c.js?file=list-plugins.py'></script>
-<noscript><pre><code>import stevedore
-
-mgr = stevedore.ExtensionManager(namespace=&#39;keystoneclient.auth.plugin&#39;,
-                                 invoke_on_load=False)
-
-def print_plugin(ext):
-    print &quot;%s:&quot; % ext.entry_point.name
-
-    for opt in ext.plugin.get_options():
-        print &quot;    %s: %s&quot; % (opt.name, opt.help)
-
-mgr.map(print_plugin)
-</code></pre></noscript></div>
-</p>
-
-<p>Which for the <code>v3password</code> plugin we&rsquo;ve been using returns:</p>
-
-<pre><code>...
-v3password:
-    auth-url: Authentication URL
-    domain-id: Domain ID to scope to
-    domain-name: Domain name to scope to
-    project-id: Project ID to scope to
-    project-name: Project name to scope to
-    project-domain-id: Domain ID containing project
-    project-domain-name: Domain name containing project
-    trust-id: Trust ID
-    user-id: User ID
-    user-name: Username
-    user-domain-id: User's domain id
-    user-domain-name: User's domain name
-    password: User's password
-...
-</code></pre>
-
-<p>From that it&rsquo;s pretty simple to determine the correct format for parameters.</p>
-
-<ul>
-<li>When using the CLI you should prefix <code>--os-</code>, e.g. <code>auth-url</code> becomes <code>--os-auth-url</code>.</li>
-<li>Environment variables are upper-cased, and prefix <code>OS_</code> and replace <code>-</code> with <code>_</code>, e.g. <code>auth-url</code> becomes <code>OS_AUTH_URL</code>.</li>
-<li>Conf file variables replace <code>-</code> with <code>_</code> eg. <code>auth-url</code> becomes <code>auth_url</code>.</li>
-</ul>
-
 ]]></content>
   </entry>
   

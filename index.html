@@ -9,8 +9,8 @@
   <meta name="author" content="Jamie Lennox">
 
   
-  <meta name="description" content="So one of my favourite things in python 3 syntax is: 1
-def function(arg, *, kw1, kw2=None): This * syntax says that kw1 and kw2 must be presented as &hellip;">
+  <meta name="description" content="For most OpenStack services the auth_token middleware component is the only direct interaction the service will have with keystone.
+It is the piece &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -117,6 +117,201 @@ def function(arg, *, kw1, kw2=None): This * syntax says that kw1 and kw2 must be
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/10/05/testing-with-auth-token-middleware/">Testing With Auth_token Middleware</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-10-05T17:28:21+11:00'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>5:28 pm</span></time>
+        
+         | <a href="/blog/2016/10/05/testing-with-auth-token-middleware/#disqus_thread">Comments</a>
+        
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>For most OpenStack services the auth_token middleware component is the only direct interaction the service will have with keystone.
+It is the piece of the service that validates the token a user presents and relays the stored information.</p>
+
+<p>When testing a service we want to ensure that the middleware is working and presenting the correct information but not actually talking to keystone.
+To do this keystonemiddleware provides a fixture that will stub out the interaction with keystone with an existing token.</p>
+
+<p>If all that makes sense to you then at this point I think you mostly just want a code example and you can research anything else you need.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">json</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystoneauth1</span> <span class="kn">import</span> <span class="n">fixture</span> <span class="k">as</span> <span class="n">ksa_fixture</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystonemiddleware</span> <span class="kn">import</span> <span class="n">auth_token</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystonemiddleware</span> <span class="kn">import</span> <span class="n">fixture</span> <span class="k">as</span> <span class="n">ksm_fixture</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">oslo_context</span> <span class="kn">import</span> <span class="n">context</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">testtools</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">webob.dec</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">webtest</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@webob.dec.wsgify</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">app</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;A really simple WSGI application that returns some context info.&quot;&quot;&quot;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c"># don&#39;t try to figure out what AuthToken sets, just use a context</span>
+</span><span class='line'>    <span class="n">ctxt</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">RequestContext</span><span class="o">.</span><span class="n">from_environ</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">environ</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c"># return some information from context so we can verify the test</span>
+</span><span class='line'>    <span class="n">resp_body</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;project_id&#39;</span><span class="p">:</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">tenant</span><span class="p">,</span>
+</span><span class='line'>                 <span class="s">&#39;user_id&#39;</span><span class="p">:</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+</span><span class='line'>                 <span class="s">&#39;auth_token&#39;</span><span class="p">:</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">auth_token</span><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">webob</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">resp_body</span><span class="p">),</span>
+</span><span class='line'>                          <span class="n">status_code</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+</span><span class='line'>                          <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Tests</span><span class="p">(</span><span class="n">testtools</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@staticmethod</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">load_app</span><span class="p">():</span>
+</span><span class='line'>        <span class="c"># load your wsgi app here, wrapped in auth_token middleware</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">auth_token</span><span class="o">.</span><span class="n">AuthProtocol</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="p">{})</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@staticmethod</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_token</span><span class="p">():</span>
+</span><span class='line'>        <span class="sd">&quot;&quot;&quot;Create a fake token that will be used in testing&quot;&quot;&quot;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># Creates a project scoped V3 token, with 1 entry in the catalog</span>
+</span><span class='line'>        <span class="n">token</span> <span class="o">=</span> <span class="n">ksa_fixture</span><span class="o">.</span><span class="n">V3Token</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">token</span><span class="o">.</span><span class="n">set_project_scope</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">s</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">add_service</span><span class="p">(</span><span class="s">&#39;identity&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">s</span><span class="o">.</span><span class="n">add_standard_endpoints</span><span class="p">(</span><span class="n">public</span><span class="o">=</span><span class="s">&#39;http://example.com/identity/public&#39;</span><span class="p">,</span>
+</span><span class='line'>                                 <span class="n">admin</span><span class="o">=</span><span class="s">&#39;http://example.com/identity/admin&#39;</span><span class="p">,</span>
+</span><span class='line'>                                 <span class="n">internal</span><span class="o">=</span><span class="s">&#39;http://example.com/identity/internal&#39;</span><span class="p">,</span>
+</span><span class='line'>                                 <span class="n">region</span><span class="o">=</span><span class="s">&#39;RegionOne&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">token</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="nb">super</span><span class="p">(</span><span class="n">Tests</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># create our app. webtest gives us a callable interface to it</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">webtest</span><span class="o">.</span><span class="n">TestApp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_app</span><span class="p">())</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># stub out auth_token middleware</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">auth_token_fixture</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">useFixture</span><span class="p">(</span><span class="n">ksm_fixture</span><span class="o">.</span><span class="n">AuthTokenFixture</span><span class="p">())</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># create a token, mock it and save it and the ID for later use</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_token</span><span class="p">()</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">token_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_token_fixture</span><span class="o">.</span><span class="n">add_token</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_auth_token_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="c"># make a request with the stubbed out token_id and unpack the response</span>
+</span><span class='line'>        <span class="n">body</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;X-Auth-Token&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_id</span><span class="p">})</span><span class="o">.</span><span class="n">json</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># ensure that the information in our stubbed token made it to the app</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token_id</span><span class="p">,</span> <span class="n">body</span><span class="p">[</span><span class="s">&#39;auth_token&#39;</span><span class="p">])</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span> <span class="n">body</span><span class="p">[</span><span class="s">&#39;project_id&#39;</span><span class="p">])</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="o">.</span><span class="n">user_id</span><span class="p">,</span> <span class="n">body</span><span class="p">[</span><span class="s">&#39;user_id&#39;</span><span class="p">])</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The important pieces are:</p>
+
+<ul>
+<li><a href="http://docs.pylonsproject.org/projects/webtest/en/latest/">Webtest</a> is a useful testing library emulating a wsgi layer so you can make requests.</li>
+<li><a href="http://docs.openstack.org/developer/keystoneauth/api/keystoneauth1.fixture.html#keystoneauth1.fixture.v3.Token">ksa_fixture.V3Token</a> is a helper that builds the correct raw data layout for a V3 token.</li>
+<li><a href="http://docs.openstack.org/developer/keystonemiddleware/api/keystonemiddleware.html#keystonemiddleware.fixture.AuthTokenFixture">AuthTokenFixture</a> is doing the mocking and returning the token data.</li>
+<li><a href="http://docs.openstack.org/developer/oslo.context/api/context.html#oslo_context.context.RequestContext.from_environ">RequestContext.from_environ</a> takes the information auth_token sets into headers and loads it into the standard place in a RequestContext.</li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2036,286 +2231,6 @@ The code has matured to the point it is usable and simplifies use for both users
 
 <p>In writing this I kept wanting to link out to official documentation and realized just how lacking it really is.
 Some explanation is available on the <a href="http://docs.openstack.org/developer/python-keystoneclient/using-sessions.html">official python-keystoneclient docs pages</a>, there is also <a href="http://docs.openstack.org/developer/python-keystoneclient/api/keystoneclient.auth.identity.html">module documentation</a> however this is definetly an area in which we (read I) am a long way behind.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/08/26/requests-mock/">Requests-mock</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-08-26T12:26:23+10:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>26</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:26 pm</span></time>
-        
-         | <a href="/blog/2014/08/26/requests-mock/#disqus_thread">Comments</a>
-        
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Having just release v0.5 of <a href="https://pypi.python.org/pypi/requests-mock">requests-mock</a> and having it used by both keystoneclient and novaclient with others in the works I thought I&rsquo;d finally do a post explaining what it is and how to use it.</p>
-
-<h2>Motivation</h2>
-
-<p>I was the person who brought <a href="http://falcao.it/HTTPretty/">HTTPretty</a> into the OpenStack requirements.</p>
-
-<p>The initial reason for this was that keystoneclient was transitioning from the <a href="https://docs.python.org/2/library/httplib.html">httplib</a> library to <a href="http://docs.python-requests.org/en/latest/">requests</a> and I needed to prove that there was no changes to the HTTP requests during the transition.
-HTTPretty is a way to mock HTTP responses at the socket level, so it is not dependant on the HTTP library you use and for this it was fairly successful.</p>
-
-<p>As part of that transition I converted all the unit tests so that they actually traversed through to the requesting layer and found a number of edge case bugs because the responses were being mocked out above this point.
-I have therefore advocated that the clients convert to mocking at the request layer rather than stubbing out returned values.
-I&rsquo;m pretty sure that this doesn&rsquo;t adhere strictly to the unit testing philosophy of testing small isolated changes, but our client libraries aren&rsquo;t that deep and I&rsquo;d honestly prefer to just test the whole way through and find those edge cases.</p>
-
-<p>Having done this has made it remarkably easier to transition to using sessions in the clients as well, because we are testing the whole path down to making HTTP requests for all the resource tests so again have assurances that the HTTP requests being sent are equivalent.</p>
-
-<p>At the same time we&rsquo;ve had a number of problems with HTTPretty:</p>
-
-<ul>
-<li>It was the lingering last requirement for getting Python 3 support. Thanks to Cyril Roelandt for finally getting that fixed.</li>
-<li>For various reasons it is difficult for the distributions to package.</li>
-<li>It has a bad habit of doing backwards incompatible, or simply broken releases. The current requirements string is: <code>httpretty&gt;=0.8.0,!=0.8.1,!=0.8.2,!=0.8.3</code></li>
-<li>Because it acts at the socket layer it doesn&rsquo;t always play nicely with other things using the socket. For example it has to be disabled for live memcache tests.</li>
-<li>It pins its requirements on pypi.</li>
-</ul>
-
-
-<p>Now I feel like I&rsquo;m just ranting.
-There are additional oddities I found in trying to fix these upstream but this is not about bashing HTTPretty.</p>
-
-<h2>requests-mock</h2>
-
-<p>requests-mock follows the same concepts allowing users to stub out responses to HTTP requests, however it specifically targets the requests library rather than stubbing the socket.
-All the OpenStack clients have been converted to requests at this point, and for the general audience if you are writing HTTP code in Python you should be using requests.</p>
-
-<p>Note: a lot of what is used in these examples is only available since the 0.5 release.
-The current OpenStack requirements still have 0.4 so you&rsquo;ll need to wait for some of the new syntax.</p>
-
-<p>The intention of requests-mock is to work in as similar way to requests itself as possible.
-Hence all the variable names and conventions should be as close to a <code>requests.Response</code> as possible.
-For example:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">requests</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">requests_mock</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">url</span> <span class="o">=</span> <span class="s">&#39;http://www.google.com&#39;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">requests_mock</span><span class="o">.</span><span class="n">mock</span><span class="p">()</span> <span class="k">as</span> <span class="n">m</span><span class="p">:</span>
-</span><span class='line'><span class="o">...</span>     <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s">&#39;Not really google&#39;</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="mi">218</span><span class="p">)</span>
-</span><span class='line'><span class="o">...</span>     <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">text</span>
-</span><span class='line'><span class="s">u&#39;Not really google&#39;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span>
-</span><span class='line'><span class="mi">218</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>So <code>text</code> in the mock equates to <code>text</code> in the response and similarly for <code>status_code</code>.
-Some more advanced usage of the requests library:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">requests_mock</span><span class="o">.</span><span class="n">mock</span><span class="p">()</span> <span class="k">as</span> <span class="n">m</span><span class="p">:</span>
-</span><span class='line'><span class="o">...</span>     <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;hello&#39;</span><span class="p">:</span> <span class="s">&#39;world&#39;</span><span class="p">},</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;test&#39;</span><span class="p">:</span> <span class="s">&#39;header&#39;</span><span class="p">})</span>
-</span><span class='line'><span class="o">...</span>     <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">text</span>
-</span><span class='line'><span class="s">u&#39;{&quot;hello&quot;: &quot;world&quot;}&#39;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span><span class="s">u&#39;hello&#39;</span><span class="p">:</span> <span class="s">u&#39;world&#39;</span><span class="p">}</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span>
-</span><span class='line'><span class="mi">200</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">headers</span>
-</span><span class='line'><span class="p">{</span><span class="s">&#39;test&#39;</span><span class="p">:</span> <span class="s">&#39;header&#39;</span><span class="p">}</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;test&#39;</span><span class="p">]</span>
-</span><span class='line'><span class="s">&#39;header&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>You can also use callbacks to create responses dynamically:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">_request_callback</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-</span><span class='line'><span class="o">...</span>     <span class="n">context</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="mi">201</span>
-</span><span class='line'><span class="o">...</span>     <span class="n">context</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;header&#39;</span>
-</span><span class='line'><span class="o">...</span>     <span class="k">return</span> <span class="p">{</span><span class="s">&#39;request&#39;</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">}</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">with</span> <span class="n">requests_mock</span><span class="o">.</span><span class="n">mock</span><span class="p">()</span> <span class="k">as</span> <span class="n">m</span><span class="p">:</span>
-</span><span class='line'><span class="o">...</span>     <span class="n">m</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">_request_callback</span><span class="p">)</span>
-</span><span class='line'><span class="o">...</span>     <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s">&#39;data&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span>
-</span><span class='line'><span class="mi">201</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">headers</span>
-</span><span class='line'><span class="p">{</span><span class="s">&#39;test&#39;</span><span class="p">:</span> <span class="s">&#39;header&#39;</span><span class="p">}</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span><span class="s">u&#39;request&#39;</span><span class="p">:</span> <span class="s">u&#39;data&#39;</span><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Note that because the callback was passed as the <code>json</code> parameter the return type is expected to be the same as if you had passed it as a predefined <code>json=blob</code> value.
-If you wanted to return <code>text</code> the callback would be on the <code>text</code> parameter.</p>
-
-<h2>Cool tricks</h2>
-
-<p>So rather than give a lot of examples i&rsquo;ll just highlight some of the interesting things you can do with the library and how to do it.</p>
-
-<ul>
-<li>Queue mutliple responses for a url, each element of the list is interpreted as if they were <code>**kwargs</code> for a response.
-In this case every request other than the first will get a 401 error:</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="p">[{</span><span class="s">&#39;json&#39;</span><span class="p">:</span> <span class="n">_request_callback</span><span class="p">},</span>
-</span><span class='line'>            <span class="p">{</span><span class="s">&#39;text&#39;</span><span class="p">:</span> <span class="s">&#39;Not Allowed&#39;</span><span class="p">,</span> <span class="s">&#39;status_code&#39;</span><span class="p">:</span> <span class="mi">401</span><span class="p">}])</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li>See the history of requests:</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">request_history</span>  <span class="c"># all requests</span>
-</span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">last_request</span>  <span class="c"># the last request</span>
-</span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">call_count</span>  <span class="c"># number of requests</span>
-</span><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">called</span>  <span class="c"># boolean, True if called</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li>match on the only the URL path:</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/path/only&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li>match on any method:</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li>or match on any URL:</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li>match on headers that are part of the request (useful for distinguishing between multiple requests to the same URL):</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">request_headers</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;X-Auth-Token&#39;</span><span class="p">:</span> <span class="s">&#39;XXXXX&#39;</span><span class="p">})</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li>be used as a function decorator</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="nd">@requests_mock.mock</span><span class="p">()</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">test_a_thing</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
-</span><span class='line'>   <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">requests_mock</span><span class="o">.</span><span class="n">ANY</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s">&#39;resp&#39;</span><span class="p">)</span>
-</span><span class='line'>   <span class="o">...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Try it!</h2>
-
-<p>There is a lot more it can do and if you want to know more you can check out:</p>
-
-<ul>
-<li><a href="http://requests-mock.readthedocs.org/">Read the Docs</a></li>
-<li><a href="https://pypi.python.org/pypi/requests-mock">PyPi</a></li>
-<li><a href="https://git.openstack.org/cgit/stackforge/requests-mock">git repository</a></li>
-</ul>
-
-
-<p>As a final selling point because it was built particularly around OpenStack needs it is:</p>
-
-<ul>
-<li>Easily integrated with the <a href="https://pypi.python.org/pypi/fixtures">fixtures</a> library.</li>
-<li>Hosted on stackforge and reviewed via <a href="https://review.openstack.org/#/q/project:stackforge/requests-mock+is:open,n,z">Gerrit</a>.</li>
-<li>Continuously tested against at least keystoneclient and novaclient to prevent backwards incompatible changes.</li>
-<li>Accepted as part of OpenStack requirements.</li>
-</ul>
-
-
-<p>Patches and <a href="https://bugs.launchpad.net/requests-mock">bug reports</a> are welcome.</p>
 </div>
   
   

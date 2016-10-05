@@ -4,7 +4,7 @@
   <title><![CDATA[jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2016-07-13T17:03:07+10:00</updated>
+  <updated>2016-10-05T16:44:31+11:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -12,6 +12,178 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Testing With Auth_token Middleware]]></title>
+    <link href="http://www.jamielennox.net/blog/2016/10/05/testing-with-auth-token-middleware/"/>
+    <updated>2016-10-05T17:28:21+11:00</updated>
+    <id>http://www.jamielennox.net/blog/2016/10/05/testing-with-auth-token-middleware</id>
+    <content type="html"><![CDATA[<p>For most OpenStack services the auth_token middleware component is the only direct interaction the service will have with keystone.
+It is the piece of the service that validates the token a user presents and relays the stored information.</p>
+
+<p>When testing a service we want to ensure that the middleware is working and presenting the correct information but not actually talking to keystone.
+To do this keystonemiddleware provides a fixture that will stub out the interaction with keystone with an existing token.</p>
+
+<p>If all that makes sense to you then at this point I think you mostly just want a code example and you can research anything else you need.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">json</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystoneauth1</span> <span class="kn">import</span> <span class="n">fixture</span> <span class="k">as</span> <span class="n">ksa_fixture</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystonemiddleware</span> <span class="kn">import</span> <span class="n">auth_token</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">keystonemiddleware</span> <span class="kn">import</span> <span class="n">fixture</span> <span class="k">as</span> <span class="n">ksm_fixture</span>
+</span><span class='line'><span class="kn">from</span> <span class="nn">oslo_context</span> <span class="kn">import</span> <span class="n">context</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">testtools</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">webob.dec</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">webtest</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@webob.dec.wsgify</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">app</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span class='line'>    <span class="sd">&quot;&quot;&quot;A really simple WSGI application that returns some context info.&quot;&quot;&quot;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c"># don&#39;t try to figure out what AuthToken sets, just use a context</span>
+</span><span class='line'>    <span class="n">ctxt</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">RequestContext</span><span class="o">.</span><span class="n">from_environ</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">environ</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c"># return some information from context so we can verify the test</span>
+</span><span class='line'>    <span class="n">resp_body</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;project_id&#39;</span><span class="p">:</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">tenant</span><span class="p">,</span>
+</span><span class='line'>                 <span class="s">&#39;user_id&#39;</span><span class="p">:</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">user</span><span class="p">,</span>
+</span><span class='line'>                 <span class="s">&#39;auth_token&#39;</span><span class="p">:</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">auth_token</span><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">webob</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">resp_body</span><span class="p">),</span>
+</span><span class='line'>                          <span class="n">status_code</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+</span><span class='line'>                          <span class="n">content_type</span><span class="o">=</span><span class="s">&#39;application/json&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Tests</span><span class="p">(</span><span class="n">testtools</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@staticmethod</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">load_app</span><span class="p">():</span>
+</span><span class='line'>        <span class="c"># load your wsgi app here, wrapped in auth_token middleware</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">auth_token</span><span class="o">.</span><span class="n">AuthProtocol</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="p">{})</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@staticmethod</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">create_token</span><span class="p">():</span>
+</span><span class='line'>        <span class="sd">&quot;&quot;&quot;Create a fake token that will be used in testing&quot;&quot;&quot;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># Creates a project scoped V3 token, with 1 entry in the catalog</span>
+</span><span class='line'>        <span class="n">token</span> <span class="o">=</span> <span class="n">ksa_fixture</span><span class="o">.</span><span class="n">V3Token</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">token</span><span class="o">.</span><span class="n">set_project_scope</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">s</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">add_service</span><span class="p">(</span><span class="s">&#39;identity&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">s</span><span class="o">.</span><span class="n">add_standard_endpoints</span><span class="p">(</span><span class="n">public</span><span class="o">=</span><span class="s">&#39;http://example.com/identity/public&#39;</span><span class="p">,</span>
+</span><span class='line'>                                 <span class="n">admin</span><span class="o">=</span><span class="s">&#39;http://example.com/identity/admin&#39;</span><span class="p">,</span>
+</span><span class='line'>                                 <span class="n">internal</span><span class="o">=</span><span class="s">&#39;http://example.com/identity/internal&#39;</span><span class="p">,</span>
+</span><span class='line'>                                 <span class="n">region</span><span class="o">=</span><span class="s">&#39;RegionOne&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">token</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="nb">super</span><span class="p">(</span><span class="n">Tests</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># create our app. webtest gives us a callable interface to it</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">webtest</span><span class="o">.</span><span class="n">TestApp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">load_app</span><span class="p">())</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># stub out auth_token middleware</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">auth_token_fixture</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">useFixture</span><span class="p">(</span><span class="n">ksm_fixture</span><span class="o">.</span><span class="n">AuthTokenFixture</span><span class="p">())</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># create a token, mock it and save it and the ID for later use</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_token</span><span class="p">()</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">token_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_token_fixture</span><span class="o">.</span><span class="n">add_token</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">test_auth_token_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>        <span class="c"># make a request with the stubbed out token_id and unpack the response</span>
+</span><span class='line'>        <span class="n">body</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;X-Auth-Token&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_id</span><span class="p">})</span><span class="o">.</span><span class="n">json</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c"># ensure that the information in our stubbed token made it to the app</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token_id</span><span class="p">,</span> <span class="n">body</span><span class="p">[</span><span class="s">&#39;auth_token&#39;</span><span class="p">])</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="o">.</span><span class="n">project_id</span><span class="p">,</span> <span class="n">body</span><span class="p">[</span><span class="s">&#39;project_id&#39;</span><span class="p">])</span>
+</span><span class='line'>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="o">.</span><span class="n">user_id</span><span class="p">,</span> <span class="n">body</span><span class="p">[</span><span class="s">&#39;user_id&#39;</span><span class="p">])</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The important pieces are:</p>
+
+<ul>
+<li><a href="http://docs.pylonsproject.org/projects/webtest/en/latest/">Webtest</a> is a useful testing library emulating a wsgi layer so you can make requests.</li>
+<li><a href="http://docs.openstack.org/developer/keystoneauth/api/keystoneauth1.fixture.html#keystoneauth1.fixture.v3.Token">ksa_fixture.V3Token</a> is a helper that builds the correct raw data layout for a V3 token.</li>
+<li><a href="http://docs.openstack.org/developer/keystonemiddleware/api/keystonemiddleware.html#keystonemiddleware.fixture.AuthTokenFixture">AuthTokenFixture</a> is doing the mocking and returning the token data.</li>
+<li><a href="http://docs.openstack.org/developer/oslo.context/api/context.html#oslo_context.context.RequestContext.from_environ">RequestContext.from_environ</a> takes the information auth_token sets into headers and loads it into the standard place in a RequestContext.</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[The Positional Library]]></title>
