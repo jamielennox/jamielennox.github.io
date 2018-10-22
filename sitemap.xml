@@ -1,91 +1,119 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>http://www.jamielennox.net/blog/2016/10/05/testing-with-auth-token-middleware/</loc>
-    <lastmod>2016-10-05T17:28:21+11:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2016/07/13/the-positional-library/</loc>
-    <lastmod>2016-07-13T15:27:52+10:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2016/04/12/os-http/</loc>
-    <lastmod>2016-04-12T12:57:25+10:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2015/09/10/user-auth-in-openstack-services/</loc>
-    <lastmod>2015-09-10T15:19:24+10:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2015/02/27/setting-up-s4u2proxy/</loc>
-    <lastmod>2015-02-27T18:48:11+11:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2015/02/23/v3-authentication-with-auth-token-middleware/</loc>
-    <lastmod>2015-02-23T10:57:46+11:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2015/02/17/loading-authentication-plugins/</loc>
-    <lastmod>2015-02-17T09:08:03+11:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2015/02/12/step-by-step-kerberized-keystone/</loc>
-    <lastmod>2015-02-12T17:20:42+11:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security/</loc>
-    <lastmod>2014-12-01T13:55:29+11:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2014/09/15/how-to-use-keystoneclient-sessions/</loc>
-    <lastmod>2014-09-15T09:13:36+10:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2014/08/26/requests-mock/</loc>
-    <lastmod>2014-08-26T12:26:23+10:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2014/08/15/git-commands-for-messy-people/</loc>
-    <lastmod>2014-08-15T10:59:00+10:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2014/05/21/identity-uri-in-auth-token-middleware/</loc>
-    <lastmod>2014-05-21T14:54:00+10:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2014/02/24/client-session-objects/</loc>
-    <lastmod>2014-02-24T13:32:00+11:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc/</loc>
-    <lastmod>2014-02-18T11:08:00+11:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2013/10/22/keystone-token-binding/</loc>
-    <lastmod>2013-10-22T11:48:00+11:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack/</loc>
-    <lastmod>2013-09-30T13:53:00+10:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2013/09/27/apiclient-communications/</loc>
-    <lastmod>2013-09-27T15:27:00+10:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd/</loc>
-    <lastmod>2013-04-09T11:50:00+10:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/2012/11/11/cryptographic-message-syntax/</loc>
-    <lastmod>2012-11-11T17:13:00+11:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/</loc>
-    <lastmod>2016-10-05T16:44:31+11:00</lastmod>
-  </url>
-  <url>
-    <loc>http://www.jamielennox.net/blog/archives/</loc>
-    <lastmod>2016-10-05T16:44:31+11:00</lastmod>
-  </url>
+<url>
+<loc>http://www.jamielennox.net/blog/2016/10/05/testing-with-auth-token-middleware/</loc>
+<lastmod>2016-10-05T16:28:21+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2016/07/13/the-positional-library/</loc>
+<lastmod>2016-07-13T15:27:52+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2016/04/12/os-http/</loc>
+<lastmod>2016-04-12T12:57:25+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2015/09/10/user-auth-in-openstack-services/</loc>
+<lastmod>2015-09-10T15:19:24+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2015/02/27/setting-up-s4u2proxy/</loc>
+<lastmod>2015-02-27T18:48:11+11:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2015/02/23/v3-authentication-with-auth-token-middleware/</loc>
+<lastmod>2015-02-23T10:57:46+11:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2015/02/17/loading-authentication-plugins/</loc>
+<lastmod>2015-02-17T09:08:03+11:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2015/02/12/step-by-step-kerberized-keystone/</loc>
+<lastmod>2015-02-12T17:20:42+11:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2014/12/01/pki-tokens-dont-give-better-security/</loc>
+<lastmod>2014-12-01T12:55:29+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2014/09/15/how-to-use-keystoneclient-sessions/</loc>
+<lastmod>2014-09-15T09:13:36+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2014/08/26/requests-mock/</loc>
+<lastmod>2014-08-26T12:26:23+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2014/08/15/git-commands-for-messy-people/</loc>
+<lastmod>2014-08-15T10:59:00+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2014/05/21/identity-uri-in-auth-token-middleware/</loc>
+<lastmod>2014-05-21T14:54:00+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2014/02/24/client-session-objects/</loc>
+<lastmod>2014-02-24T13:32:00+11:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2014/02/18/dealing-with-pyc/</loc>
+<lastmod>2014-02-18T11:08:00+11:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2013/10/22/keystone-token-binding/</loc>
+<lastmod>2013-10-22T11:48:00+11:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2013/09/30/keystone-with-httpd-in-devstack/</loc>
+<lastmod>2013-09-30T13:53:00+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2013/09/27/apiclient-communications/</loc>
+<lastmod>2013-09-27T15:27:00+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2013/04/09/user-access-to-libvirtd/</loc>
+<lastmod>2013-04-09T11:50:00+10:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/2012/11/11/cryptographic-message-syntax/</loc>
+<lastmod>2012-11-11T17:13:00+11:00</lastmod>
+</url>
+<url>
+<loc>http://www.jamielennox.net/</loc>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/archives/</loc>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/categories/crypto/</loc>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/categories/fedora/</loc>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/categories/openstack/</loc>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/categories/keystone/</loc>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/categories/devstack/</loc>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/categories/python/</loc>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/categories/requests-mock/</loc>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/categories/freeipa/</loc>
+</url>
+<url>
+<loc>http://www.jamielennox.net/blog/categories/kerberos/</loc>
+</url>
+<url>
+<loc>http://www.jamielennox.net/posts/2/</loc>
+</url>
 </urlset>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Openstack | jamielennox.net]]></title>
   <link href="http://www.jamielennox.net/blog/categories/openstack/atom.xml" rel="self"/>
   <link href="http://www.jamielennox.net/"/>
-  <updated>2016-10-05T16:44:31+11:00</updated>
+  <updated>2018-10-22T15:38:50+11:00</updated>
   <id>http://www.jamielennox.net/</id>
   <author>
     <name><![CDATA[Jamie Lennox]]></name>
@@ -16,7 +16,7 @@
   <entry>
     <title type="html"><![CDATA[Testing With Auth_token Middleware]]></title>
     <link href="http://www.jamielennox.net/blog/2016/10/05/testing-with-auth-token-middleware/"/>
-    <updated>2016-10-05T17:28:21+11:00</updated>
+    <updated>2016-10-05T16:28:21+10:00</updated>
     <id>http://www.jamielennox.net/blog/2016/10/05/testing-with-auth-token-middleware</id>
     <content type="html"><![CDATA[<p>For most OpenStack services the auth_token middleware component is the only direct interaction the service will have with keystone.
 It is the piece of the service that validates the token a user presents and relays the stored information.</p>
