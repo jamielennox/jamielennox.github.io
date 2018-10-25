@@ -1,3 +1,3 @@
 [submodule ".themes/whitespace"]
 	path = .themes/whitespace
-	url = git@github.com:lucaslew/whitespace.git
+	url = https://github.com/lucaslew/whitespace.git
